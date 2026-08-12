@@ -133,33 +133,45 @@ Login account: `superadmin`/`admin123`.
 Repair order numbers (`RO-xxxx`) and invoice numbers (`INV-xxxx`) are
 generated server-side on creation.
 
-## 5. Deploying (Railway / Render / Fly.io)
+## 5. Deploying (Vercel)
 
-The repo-level `Dockerfile` builds the whole app into **one image**: it
-compiles the frontend (`npm run build`) and then runs the FastAPI backend,
-which also serves the built UI from the same origin. No CORS or API-base
-URL configuration is needed in production — `/api/*` and the HTML pages
-come from one domain.
+The repo is set up for Vercel as a static frontend + one Python serverless
+function:
+
+- `package.json` / `vercel.json` — build the Vite app (`frontend/dist`)
+- `api/index.py` — re-exports the FastAPI app as a Vercel Function
+- `requirements.txt` — Python runtime deps Vercel installs
+- `backend/__init__.py` — makes `backend.app.main` importable on Vercel
+
+### One-time setup
 
 1. Push the repo to GitHub.
-2. Create a **managed Postgres** first (Railway Postgres plugin, Render
-   Postgres, Fly Postgres). It gives you a `DATABASE_URL`.
-3. **Load your existing data** into the hosted DB before first start
-   (the app creates missing tables on boot, so restore into a fresh DB):
+2. [vercel.com](https://vercel.com) → **Add New → Project** → import the
+   GitHub repo → Framework Preset **Other** → Build Command
+   `npm run build` → Output Directory `frontend/dist` → Deploy.
+3. **Create the database**: Vercel → **Storage → Create Database →
+   Postgres** (Neon). When the app is linked, Vercel auto-injects
+   `DATABASE_URL` (and friends) into your functions.
+4. **Load data into the hosted DB** (run the SQL in the Vercel Postgres
+   → **Query** tab, or via `psql` with the connection string):
    ```bash
-   pg_dump -U postgres -h localhost repair_shop > repair_shop.sql
-   psql "<hosted DATABASE_URL>" < repair_shop.sql
+   # Option A — sample data:
+   psql "<hosted DATABASE_URL>" -f db/schema.sql
+   psql "<hosted DATABASE_URL>" -f db/seed.sql
+
+   # Option B — your real data from local:
+   pg_dump -U postgres -h localhost repair_shop --no-owner --no-privileges > repair_shop.sql
+   psql "<hosted DATABASE_URL>" -f repair_shop.sql
    ```
-4. Create a **Web Service** from the repo (Railway/Render auto-detect the
-   `Dockerfile`). Set these environment variables on the service:
-   - `DATABASE_URL` — from step 2 (the app auto-converts `postgres://`
-     and `postgresql://` into the psycopg2 URL it needs)
-   - `JWT_SECRET` — a long random string (generate one; never reuse the
-     `.env` dev secret)
-   - `CORS_ORIGINS` — optional; default `http://localhost:5173` is fine
-     since the UI is served same-origin
-5. Deploy. The service listens on port `8000`; the platform exposes it.
-   Health check: `GET /api/health`.
+5. **Environment variables** (Vercel → Project → Settings → Environment
+   Variables): `DATABASE_URL` (usually auto-set), plus a fresh
+   `JWT_SECRET` (e.g. `python -c "import secrets;print(secrets.token_hex(32))"`)
+   and `CORS_ORIGINS` = `https://<your-project>.vercel.app`.
+6. Redeploy; verify `GET /api/health`, then log in and open a
+   `/track.html?token=…` link. On each future `git push` Vercel redeploys.
+
+The older Dockerfile path (Railway / Render / Fly.io) still works the same
+way: build one image that serves the built UI and API from one origin.
 
 Local verification of the production path:
 ```bash
