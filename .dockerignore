@@ -1,0 +1,8 @@
+.git
+.gitignore
+**/.venv
+**/node_modules
+**/dist
+backend/.env
+db
+*.log

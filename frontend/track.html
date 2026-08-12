@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Your Repair · Repair Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  .track-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 16px; }
+  .track-card{ width:100%; max-width:640px; background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(16,24,40,.1),0 8px 24px rgba(16,24,40,.08); padding:32px; }
+  .track-title{ font-size:20px; font-weight:700; margin:6px 0 2px; color:#111827; }
+  .track-sub{ font-size:13px; color:#6b7280; margin-bottom:20px; }
+  .track-lookup{ display:flex; gap:10px; flex-wrap:wrap; }
+  .track-lookup .field{ flex:1; min-width:200px; margin-bottom:0; }
+  .track-result{ margin-top:24px; border-top:1px solid #e5e7eb; padding-top:20px; }
+  .track-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .track-ro{ font-size:22px; font-weight:700; color:#111827; }
+  .stepper{ display:flex; align-items:flex-start; margin:22px 0; }
+  .step{ flex:1; text-align:center; position:relative; }
+  .step:not(:last-child)::after{ content:''; position:absolute; top:11px; left:calc(50% + 13px); right:calc(-50% + 13px); height:2px; background:#e5e7eb; }
+  .step.done:not(:last-child)::after{ background:#10b981; }
+  .step-dot{ width:22px; height:22px; border-radius:50%; margin:0 auto; border:2px solid #d1d5db; background:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; color:#9ca3af; }
+  .step.done .step-dot{ border-color:#10b981; background:#10b981; color:#fff; }
+  .step-label{ font-size:10px; font-weight:600; margin-top:6px; color:#6b7280; text-transform:capitalize; }
+  .step.done .step-label{ color:#111827; }
+  .track-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; margin-bottom:18px; }
+  .track-label{ font-size:11px; font-weight:700; letter-spacing:.04em; color:#9ca3af; text-transform:uppercase; margin-bottom:2px; }
+  .track-value{ font-size:14px; font-weight:500; color:#111827; }
+  .track-notes{ margin-bottom:18px; }
+  .track-section-title{ font-size:12px; font-weight:700; letter-spacing:.04em; color:#6b7280; text-transform:uppercase; margin:0 0 10px; }
+  .track-panel{ border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+  .track-panel p{ margin:0; font-size:14px; color:#374151; white-space:pre-wrap; }
+  .track-panel .muted{ color:#6b7280; font-style:italic; }
+  .track-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .track-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#9ca3af; padding:6px 8px; border-bottom:1px solid #e5e7eb; }
+  .track-table td{ padding:8px; border-bottom:1px solid #f3f4f6; color:#111827; }
+  .track-totals{ display:flex; justify-content:flex-end; gap:24px; margin-top:12px; text-align:right; }
+  .track-totals .tt-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#9ca3af; }
+  .track-totals .tt-value{ font-size:15px; font-weight:700; color:#111827; }
+  .cancel-banner{ background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:10px; padding:12px 16px; font-size:14px; font-weight:600; margin:18px 0; }
+  .pay-status{ font-size:13px; margin-top:8px; color:#374151; }
+  .login-error{ margin-top:12px; }
+  .track-top{ margin-bottom:16px; }
+  @media (max-width:560px){ .track-grid{ grid-template-columns:1fr; } .track-totals{ flex-direction:column; gap:8px; } }
+</style>
+</head>
+<body class="login-body">
+
+<div class="track-wrap">
+  <div class="track-card">
+    <div class="login-brand">
+      <div class="brand-icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+      <div>
+        <div class="login-brand-name">Repair Shop</div>
+        <div class="login-brand-sub">PRECISION REPAIR</div>
+      </div>
+    </div>
+
+    <h1 class="track-title">Track your repair</h1>
+    <p class="track-sub">Enter the RO number from your receipt and the phone number you registered.</p>
+
+    <form id="track-form" class="track-lookup" novalidate>
+      <div class="field">
+        <label for="track-ro">RO Number</label>
+        <input class="input" id="track-ro" name="ro_number" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="track-phone">Phone Number</label>
+        <input class="input" id="track-phone" name="phone" autocomplete="off" required>
+      </div>
+      <div class="field" style="flex-basis:100%;">
+        <button class="btn btn-primary" id="track-btn" type="submit"><i class="bi bi-search"></i> Track</button>
+      </div>
+    </form>
+    <div class="login-error" id="track-error" hidden></div>
+
+    <div id="track-result"></div>
+
+  </div>
+</div>
+
+<script type="module" src="/src/track.js"></script>
+</body>
+</html>

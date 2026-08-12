@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In · Repair Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+      <div>
+        <div class="login-brand-name">Repair Shop</div>
+        <div class="login-brand-sub">PRECISION REPAIR</div>
+      </div>
+    </div>
+
+    <h1 class="login-title">Sign in to your workspace</h1>
+    <p class="login-sub">Use the credentials provided by your administrator.</p>
+
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label for="login-username">Username</label>
+        <input class="input" id="login-username" name="username" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input class="input" id="login-password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="login-error" id="login-error" hidden></div>
+      <button class="btn btn-primary login-btn" id="login-btn" type="submit"><i class="bi bi-box-arrow-in-right"></i> Sign In</button>
+    </form>
+
+    <div class="login-footer">Restricted access &middot; Authorized personnel only &middot; <a href="/track.html">Track your repair</a></div>
+  </div>
+</div>
+
+<script type="module" src="/src/login.js"></script>
+</body>
+</html>
