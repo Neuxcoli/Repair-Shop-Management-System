@@ -135,20 +135,23 @@ generated server-side on creation.
 
 ## 5. Deploying (Vercel)
 
-The repo is set up for Vercel as a static frontend + one Python serverless
-function:
+Vercel deploys the FastAPI app as a single serverless Function using its
+FastAPI preset, and the built frontend (`frontend/dist`, served by the
+app's `StaticFiles` mount) is promoted to the CDN at build time:
 
-- `package.json` / `vercel.json` — build the Vite app (`frontend/dist`)
-- `api/index.py` — re-exports the FastAPI app as a Vercel Function
-- `requirements.txt` — Python runtime deps Vercel installs
-- `backend/__init__.py` — makes `backend.app.main` importable on Vercel
+- `pyproject.toml` — Python 3.12 + runtime deps + `[tool.vercel]`
+  entrypoint pointing at `backend.app.main:app`, and a build hook that
+  runs `npm run build` before deploy
+- `package.json` — root build script that builds the Vite frontend
+- `vercel.json` — function `maxDuration` (no routing needed; FastAPI
+  handles it)
 
 ### One-time setup
 
 1. Push the repo to GitHub.
 2. [vercel.com](https://vercel.com) → **Add New → Project** → import the
-   GitHub repo → Framework Preset **Other** → Build Command
-   `npm run build` → Output Directory `frontend/dist` → Deploy.
+   GitHub repo → Framework Preset **FastAPI** → Root Directory `./` →
+   Deploy.
 3. **Create the database**: Vercel → **Storage → Create Database →
    Postgres** (Neon). When the app is linked, Vercel auto-injects
    `DATABASE_URL` (and friends) into your functions.
