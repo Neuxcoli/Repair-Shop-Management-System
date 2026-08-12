@@ -1,5 +1,9 @@
 -- Sample data mirroring the original static mockup
 
+-- Admin account (bcrypt hash of "admin123"); roles: admin
+INSERT INTO repairshop_users (username, password, role) VALUES
+  ('superadmin', '$2b$12$jm0JAGi8zLKg7fQXjsakvOkhwz1U9WXntEmp0ogTwXAitNCsilcxO', 'admin');
+
 INSERT INTO repairshop_customers (full_name, phone, email, address) VALUES
   ('Sarah Jenkins', '+63 917 555 0142', 'sarah.jenkins@email.com', NULL),
   ('Miguel Torres', '+63 918 224 3390', 'm.torres@email.com', NULL),
