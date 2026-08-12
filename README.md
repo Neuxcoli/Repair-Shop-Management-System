@@ -87,8 +87,18 @@ git commit -m "Initial commit: Repair Shop Management System (FastAPI + Vite + P
 
 ## Roles & permissions
 
-Five roles map to the ARGO spec role-and-permission matrix (see
-`backend/app/dependencies.py` for the authoritative mapping):
+The system ships with the ARGO spec role-and-permission matrix (see
+`backend/app/dependencies.py`), but is currently configured **admin-only**:
+only an `admin` account can log in. The other roles (Front Desk,
+Technician, Parts Staff, Manager) are wired up in the code and can be
+re-enabled later simply by creating users with those roles.
+
+Customer tracking is public but access-controlled by a **random tracking
+token** per order — no login needed. The shop sends the customer their
+link (visible in the order detail: `Copy` next to "Customer Tracking
+Link"), and the customer opens `/track.html` with that code. Tokens are
+unguessable and unique, so orders can't be enumerated; the old
+RO-number + phone lookup was removed.
 
 | Role         | Can do |
 |--------------|--------|
@@ -105,9 +115,7 @@ requires an estimated cost; completion records the actual cost and
 Orders with an invoice cannot be deleted. Deleting a record is a soft
 delete (`deleted_at`) — it disappears from lists but is kept in the DB.
 
-Sample login accounts (seeded users in the live DB):
-`superadmin`/`admin123`, `tech_jenny`/`jenny123`, `manager1`/`manager123`,
-`frontdesk1`/`front123`, `parts1`/`parts123`.
+Login account: `superadmin`/`admin123`.
 
 ## API overview
 
@@ -120,7 +128,7 @@ Sample login accounts (seeded users in the live DB):
 | Repair Orders     | `GET/POST /api/orders`, `PATCH/DELETE /api/orders/{id}` |
 | Invoices           | `GET/POST /api/invoices` |
 | Dashboard KPIs     | `GET /api/dashboard/summary` |
-| Public tracking    | `GET /api/public/track` |
+| Public tracking    | `GET /api/public/track?token=…` |
 
 Repair order numbers (`RO-xxxx`) and invoice numbers (`INV-xxxx`) are
 generated server-side on creation.

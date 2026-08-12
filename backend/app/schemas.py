@@ -127,6 +127,7 @@ class RepairOrderOut(RepairOrderBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     ro_number: str
+    tracking_token: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     inspection_notes: Optional[str] = None

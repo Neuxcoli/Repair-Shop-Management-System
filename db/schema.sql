@@ -69,6 +69,7 @@ CREATE TABLE repairshop_users (
 CREATE TABLE repairshop_repair_orders (
   id                  SERIAL PRIMARY KEY,
   ro_number           VARCHAR(20) UNIQUE NOT NULL,   -- e.g. RO-8921
+  tracking_token      VARCHAR(64) UNIQUE,            -- random link token for public tracking
   customer_id         INTEGER NOT NULL REFERENCES repairshop_customers(id) ON DELETE RESTRICT,
   item_id             INTEGER NOT NULL REFERENCES repairshop_items(id) ON DELETE RESTRICT,
   technician_id       INTEGER REFERENCES repairshop_technicians(id) ON DELETE SET NULL,

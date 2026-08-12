@@ -35,6 +35,15 @@ const errBox = document.getElementById('track-error');
 const result = document.getElementById('track-result');
 const btn = document.getElementById('track-btn');
 
+// Pull a token straight from the URL: /track.html?token=abc123 or a pasted link.
+function extractToken(input) {
+  const value = String(input ?? '').trim();
+  if (!value) return '';
+  if (/^[A-Za-z0-9_-]{16,}$/.test(value)) return value;
+  const match = value.match(/[?&]token=([A-Za-z0-9_-]+)/);
+  return match ? match[1] : value;
+}
+
 function goBack() {
   if (window.history.length > 1) {
     window.history.back();
@@ -42,7 +51,7 @@ function goBack() {
     result.innerHTML = '';
     errBox.hidden = true;
     form.reset();
-    form.ro_number.focus();
+    form.token.focus();
   }
 }
 
@@ -51,12 +60,16 @@ form.addEventListener('submit', async (e) => {
   if (!form.reportValidity()) return;
   errBox.hidden = true;
   result.innerHTML = '';
-  const ro = form.ro_number.value.trim();
-  const phone = form.phone.value.trim();
+  const token = extractToken(form.token.value);
+  if (!token) {
+    errBox.textContent = 'Please enter a valid tracking code.';
+    errBox.hidden = false;
+    return;
+  }
   btn.disabled = true;
   btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Checking&hellip;';
   try {
-    const res = await fetch(`/api/public/track?ro_number=${encodeURIComponent(ro)}&phone=${encodeURIComponent(phone)}`);
+    const res = await fetch(`/api/public/track?token=${encodeURIComponent(token)}`);
     if (!res.ok) {
       const body = await res.json().catch(() => null);
       throw new Error(body?.detail || 'Could not find that order.');
@@ -70,6 +83,12 @@ form.addEventListener('submit', async (e) => {
     btn.innerHTML = '<i class="bi bi-search"></i> Track';
   }
 });
+
+const urlToken = new URLSearchParams(window.location.search).get('token');
+if (urlToken) {
+  form.token.value = urlToken;
+  form.requestSubmit();
+}
 
 function render(o) {
   const parts = o.parts.length

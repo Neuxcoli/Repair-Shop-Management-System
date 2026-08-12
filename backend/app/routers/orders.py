@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
@@ -188,7 +190,11 @@ def create_order(
     ).first():
         raise HTTPException(400, "Item does not exist")
 
-    order = models.RepairOrder(ro_number=_next_ro_number(db), **payload.model_dump())
+    order = models.RepairOrder(
+        ro_number=_next_ro_number(db),
+        tracking_token=secrets.token_urlsafe(16),
+        **payload.model_dump(),
+    )
     db.add(order)
     db.flush()
     _record_status_change(db, order, user, order.status, note="Order received", from_status=None)

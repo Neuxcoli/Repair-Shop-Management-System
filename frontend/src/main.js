@@ -565,6 +565,14 @@ async function openOrderDetail(id) {
   document.getElementById('od-released').value = order.released_at ? dateFmt(order.released_at) : '—';
   document.getElementById('od-completed').value = order.completed_at ? dateFmt(order.completed_at) : '—';
 
+  const trackLink = document.getElementById('od-track-link');
+  if (trackLink) {
+    trackLink.value = order.tracking_token
+      ? `${window.location.origin}/track.html?token=${encodeURIComponent(order.tracking_token)}`
+      : '';
+    document.getElementById('od-copy-link').hidden = !order.tracking_token;
+  }
+
   document.getElementById('od-problem').disabled = !can('repair_order.create');
   document.getElementById('od-estimated').disabled = !can('repair_order.approve');
   ['od-labor', 'od-warranty-days', 'od-warranty-notes'].forEach((f) => {
@@ -735,6 +743,20 @@ async function renderOrderInvoice(order, invoice) {
     });
   }
 }
+
+document.getElementById('od-copy-link').addEventListener('click', async () => {
+  const input = document.getElementById('od-track-link');
+  if (!input?.value) return;
+  try {
+    await navigator.clipboard.writeText(input.value);
+    const btn = document.getElementById('od-copy-link');
+    btn.innerHTML = '<i class="bi bi-check2"></i> Copied';
+    setTimeout(() => { btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy'; }, 1500);
+  } catch (err) {
+    input.select();
+    document.execCommand('copy');
+  }
+});
 
 document.getElementById('od-save').addEventListener('click', async () => {
   if (!activeOrderId) return;

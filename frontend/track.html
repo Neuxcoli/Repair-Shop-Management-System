@@ -58,16 +58,12 @@
     </div>
 
     <h1 class="track-title">Track your repair</h1>
-    <p class="track-sub">Enter the RO number from your receipt and the phone number you registered.</p>
+    <p class="track-sub">Enter the tracking code from the text or email you received, or paste your tracking link.</p>
 
     <form id="track-form" class="track-lookup" novalidate>
       <div class="field">
-        <label for="track-ro">RO Number</label>
-        <input class="input" id="track-ro" name="ro_number" autocomplete="off" required>
-      </div>
-      <div class="field">
-        <label for="track-phone">Phone Number</label>
-        <input class="input" id="track-phone" name="phone" autocomplete="off" required>
+        <label for="track-code">Tracking Code</label>
+        <input class="input" id="track-code" name="token" autocomplete="off" required placeholder="e.g. 8f3ab2c9d41e… or paste full link">
       </div>
       <div class="field" style="flex-basis:100%;">
         <button class="btn btn-primary" id="track-btn" type="submit"><i class="bi bi-search"></i> Track</button>

@@ -9,21 +9,13 @@ from ..database import get_db
 router = APIRouter(prefix="/api/public", tags=["public"])
 
 NOT_FOUND = HTTPException(
-    404, "No repair order found for that RO number and phone combination"
+    404, "No repair order found for that tracking code"
 )
-
-
-def _norm_phone(phone: str) -> str:
-    digits = re.sub(r"\D", "", phone or "")
-    if digits.startswith("63") and len(digits) == 12:
-        digits = digits[2:]
-    return digits.lstrip("0")
 
 
 @router.get("/track", response_model=schemas.TrackOrderOut)
 def track_order(
-    ro_number: str,
-    phone: str,
+    token: str,
     db: Session = Depends(get_db),
 ):
     order = (
@@ -34,14 +26,12 @@ def track_order(
             joinedload(models.RepairOrder.parts).joinedload(models.RepairOrderPart.part),
         )
         .filter(
-            models.RepairOrder.ro_number == ro_number.strip(),
+            models.RepairOrder.tracking_token == token.strip(),
             models.RepairOrder.deleted_at.is_(None),
         )
         .first()
     )
     if not order or not order.customer:
-        raise NOT_FOUND
-    if _norm_phone(order.customer.phone) != _norm_phone(phone):
         raise NOT_FOUND
 
     invoice = (

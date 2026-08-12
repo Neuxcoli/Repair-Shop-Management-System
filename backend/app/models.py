@@ -109,6 +109,7 @@ class RepairOrder(Base):
 
     id = Column(Integer, primary_key=True)
     ro_number = Column(String(20), unique=True, nullable=False)
+    tracking_token = Column(String(64), unique=True, index=True)
     customer_id = Column(Integer, ForeignKey("repairshop_customers.id"), nullable=False)
     item_id = Column(Integer, ForeignKey("repairshop_items.id"), nullable=False)
     technician_id = Column(Integer, ForeignKey("repairshop_technicians.id"), nullable=True)
