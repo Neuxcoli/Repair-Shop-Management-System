@@ -983,7 +983,7 @@ async function renderOrderInvoice(order) {
     ${can('payment.record') ? `
       <div class="field-row" id="od-payment-form">
         <div class="field"><label>Amount</label><input class="input" id="od-pay-amount" type="number" min="0.01" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Method</label><select class="input" id="od-pay-method"><option value="cash">Cash</option><option value="gcash">GCash</option><option value="card">Card</option><option value="bank">Bank Transfer</option></select></div>
+        <div class="field"><label>Method</label><select class="input" id="od-pay-method"><option value="cash">Cash</option><option value="gcash">GCash</option></select></div>
         <div class="field"><label>Reference</label><input class="input" id="od-pay-ref" placeholder="optional"></div>
         <div class="field" style="max-width:150px;"><label>&nbsp;</label><button class="btn btn-primary" id="od-pay-add">Record Payment</button></div>
       </div>` : ''}`;
