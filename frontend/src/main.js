@@ -1502,6 +1502,21 @@ async function initApp() {
   document.querySelectorAll('.nav-item').forEach((item) => {
     item.addEventListener('click', () => switchPage(item.dataset.page));
   });
+
+  // Mobile sidebar toggle
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const sidebar = document.querySelector('.sidebar');
+  let overlay = document.querySelector('.sidebar-overlay');
+  if (!overlay) { overlay = document.createElement('div'); overlay.className = 'sidebar-overlay'; sidebar.parentNode.insertBefore(overlay, sidebar); }
+  const closeSidebar = () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); };
+  hamburgerBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.querySelectorAll('.nav-item').forEach((n) => n.addEventListener('click', closeSidebar));
+
   renderDashboard();
   loadNotifications();
 }
