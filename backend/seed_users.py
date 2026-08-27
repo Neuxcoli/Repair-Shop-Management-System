@@ -49,7 +49,7 @@ if __name__ == "__main__":
     technician = get_or_create_technician("Jenny Dela Cruz", "jenny.d@precisionrepair.com")
 
     upsert_user("tech_jenny", tech_password, "technician", technician_id=technician.id)
-    upsert_user("superadmin", admin_password, "admin")
+    upsert_user("admin", admin_password, "admin")
 
     db.commit()
     db.close()
