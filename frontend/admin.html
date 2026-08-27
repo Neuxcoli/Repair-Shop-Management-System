@@ -110,13 +110,13 @@
               <option value="cancelled">Cancelled</option>
               <option value="rejected">Rejected</option>
             </select>
-            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="orders-search" placeholder="Search by RO#, customer, or item..."></div>
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="orders-search" placeholder="Search by order#, customer, or item..."></div>
             <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
           </div>
 
           <table>
             <thead>
-              <tr><th>RO #</th><th>Customer</th><th>Item</th><th>Technician</th><th>Priority</th><th>Status</th><th></th></tr>
+              <tr><th>Order #</th><th>Customer</th><th>Item</th><th>Technician</th><th>Priority</th><th>Status</th><th></th></tr>
             </thead>
             <tbody id="orders-table-body"></tbody>
           </table>
@@ -186,11 +186,11 @@
 
         <div class="panel">
           <div class="filter-bar">
-            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="parts-search" placeholder="Search by SKU or part name..."></div>
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="parts-search" placeholder="Search by part# or part name..."></div>
             <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
           </div>
           <table>
-            <thead><tr><th>SKU</th><th>Part Name</th><th>Qty On Hand</th><th>Unit Cost</th><th>Unit Price</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Part #</th><th>Part Name</th><th>Qty On Hand</th><th>Unit Cost</th><th>Unit Price</th><th>Status</th><th></th></tr></thead>
             <tbody id="parts-table-body"></tbody>
           </table>
           <div class="pager-row"><div class="pager-left" id="parts-count"></div></div>
@@ -217,7 +217,7 @@
           </div>
           <table>
             <thead>
-              <tr><th>Invoice #</th><th>RO #</th><th>Customer</th><th>Total</th><th>Issued</th><th>Paid</th><th>Status</th><th></th></tr>
+              <tr><th>Invoice #</th><th>Order #</th><th>Customer</th><th>Total</th><th>Issued</th><th>Paid</th><th>Status</th><th></th></tr>
             </thead>
             <tbody id="invoices-table-body"></tbody>
           </table>
@@ -418,7 +418,7 @@
             <input class="input" id="new-item-description" placeholder="e.g. 2021 Honda Civic" required>
           </div>
           <div class="field">
-            <label>Identifier</label>
+            <label>Serial #</label>
             <input class="input" id="new-item-identifier" placeholder="e.g. ABC-123 / SN">
           </div>
         </div>
@@ -471,7 +471,7 @@
     <div class="modal-body">
 
       <div class="detail-grid">
-        <div class="detail-item"><div class="detail-label">RO #</div><div class="detail-value" id="od-ro">—</div></div>
+        <div class="detail-item"><div class="detail-label">Order #</div><div class="detail-value" id="od-ro">—</div></div>
         <div class="detail-item"><div class="detail-label">Customer</div><div class="detail-value" id="od-customer">—</div></div>
         <div class="detail-item"><div class="detail-label">Item</div><div class="detail-value" id="od-item">—</div></div>
         <div class="detail-item"><div class="detail-label">Technician</div><div class="detail-value" id="od-technician">—</div></div>
@@ -700,7 +700,7 @@
     <form class="modal-body" id="form-part">
       <div class="field-row">
         <div class="field">
-          <label>SKU</label>
+          <label>Part #</label>
           <input class="input" name="sku" placeholder="e.g. BRK-2201" required>
         </div>
         <div class="field">
@@ -784,7 +784,7 @@
       <div class="detail-section">
         <div class="detail-section-title">Repair History</div>
         <table>
-          <thead><tr><th>RO #</th><th>Item</th><th>Technician</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead>
+          <thead><tr><th>Order #</th><th>Item</th><th>Technician</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead>
           <tbody id="cust-detail-orders-body"></tbody>
         </table>
         <div class="pager-row"><div class="pager-left" id="cust-detail-orders-count"></div></div>

@@ -95,7 +95,7 @@ async function loadOrders() {
 
 async function openDetail(id) {
   const o = await api.portal.orders.get(id);
-  document.getElementById('portal-detail-title').textContent = `Repair Order ${o.ro_number}`;
+  document.getElementById('portal-detail-title').textContent = `Order ${o.ro_number}`;
   const parts = o.parts || [];
   const history = o.status_history || [];
   document.getElementById('portal-detail-body').innerHTML = `

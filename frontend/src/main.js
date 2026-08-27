@@ -796,7 +796,7 @@ async function openOrderDetail(id) {
   const role = currentUser.role;
   const order = await api.orders.get(id);
 
-  document.getElementById('order-detail-title').textContent = `Repair Order ${order.ro_number}`;
+  document.getElementById('order-detail-title').textContent = `Order ${order.ro_number}`;
   document.getElementById('order-detail-badge').innerHTML = badge(STATUS_BADGE[order.status], label(order.status));
 
   document.getElementById('od-ro').textContent = order.ro_number;
