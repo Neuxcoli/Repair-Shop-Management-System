@@ -1,11 +1,17 @@
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import './style.css';
-import { badge, dateFmt, esc, label, peso, STATUS_BADGE } from './ui.js';
+import { dateFmt, esc, label } from './ui.js';
 
 const STEPS = ['requested', 'diagnosed', 'approved', 'in_progress', 'completed', 'closed'];
 const STATUS_INDEX = {
   requested: 0, diagnosed: 1, approved: 2,
   in_progress: 3, on_hold: 3, completed: 4, invoiced: 4, closed: 5,
+};
+const STATUS_COLOR = {
+  requested: '#6b7280', diagnosed: '#2563EB', approved: '#D97706',
+  in_progress: '#7C3AED', on_hold: '#D97706', completed: '#059669', invoiced: '#059669', closed: '#059669',
+};
+const PRIORITY_COLOR = {
+  urgent: '#E11D48', high: '#D97706', normal: '#2563EB', low: '#6b7280',
 };
 
 function stepper(status) {
@@ -17,145 +23,70 @@ function stepper(status) {
     </div>`).join('')}</div>`;
 }
 
+function badge(color, text) {
+  return `<span class="badge" style="background:${color}15;color:${color};border-color:${color}30;"><span class="bdot" style="background:${color};"></span>${text}</span>`;
+}
+
 const form = document.getElementById('track-form');
 const errBox = document.getElementById('track-error');
 const result = document.getElementById('track-result');
 const btn = document.getElementById('track-btn');
-
-// Pull a token straight from the URL: /track.html?token=abc123 or a pasted link.
-function extractToken(input) {
-  const value = String(input ?? '').trim();
-  if (!value) return '';
-  if (/^[A-Za-z0-9_-]{16,}$/.test(value)) return value;
-  const match = value.match(/[?&]token=([A-Za-z0-9_-]+)/);
-  return match ? match[1] : value;
-}
-
-function goBack() {
-  if (window.history.length > 1) {
-    window.history.back();
-  } else {
-    result.innerHTML = '';
-    errBox.hidden = true;
-    form.reset();
-    form.token.focus();
-  }
-}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!form.reportValidity()) return;
   errBox.hidden = true;
   result.innerHTML = '';
-  const token = extractToken(form.token.value);
-  if (!token) {
-    errBox.textContent = 'Please enter a valid tracking code.';
+
+  const ro = form.ro_number.value.trim();
+  const phone = form.phone.value.trim();
+  if (!ro || !phone) {
+    errBox.textContent = 'Please enter both an order number and phone number or email.';
     errBox.hidden = false;
     return;
   }
+
   btn.disabled = true;
   btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Checking&hellip;';
   try {
-    const res = await fetch(`/api/public/track?token=${encodeURIComponent(token)}`);
+    const res = await fetch(`/api/public/track?ro_number=${encodeURIComponent(ro)}&phone=${encodeURIComponent(phone)}`);
     if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      throw new Error(body?.detail || 'Could not find that order.');
+      throw new Error('No repair order found with that information.');
     }
     render(await res.json());
   } catch (err) {
-    errBox.textContent = err.message;
+    errBox.textContent = err.message || 'No repair order found with that information.';
     errBox.hidden = false;
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-search"></i> Track';
+    btn.innerHTML = '<i class="bi bi-search"></i> Track Repair';
   }
 });
 
-const urlToken = new URLSearchParams(window.location.search).get('token');
-if (urlToken) {
-  form.token.value = urlToken;
-  form.requestSubmit();
-}
-
 function render(o) {
-  const parts = o.parts.length
-    ? `<div class="track-panel">
-        <div class="track-section-title">Parts Used</div>
-        <table class="track-table">
-          <thead><tr><th>Part</th><th>Qty</th><th>Unit Price</th><th style="text-align:right">Line Total</th></tr></thead>
-          <tbody>${o.parts.map((p) => `
-            <tr>
-              <td>${esc(p.name)}${p.sku ? `<div style="font-size:11px;color:#9ca3af">${esc(p.sku)}</div>` : ''}</td>
-              <td>${p.quantity}</td>
-              <td>${peso(p.unit_price)}</td>
-              <td style="text-align:right">${peso(p.line_total)}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-        <div class="track-totals">
-          <div><div class="tt-label">Labor</div><div class="tt-value">${peso(o.labor_cost)}</div></div>
-          <div><div class="tt-label">Parts</div><div class="tt-value">${peso(o.parts_total)}</div></div>
-          <div><div class="tt-label">Total</div><div class="tt-value">${peso(o.quote_total)}</div></div>
-        </div>
-      </div>`
-    : o.labor_cost > 0 || o.estimated_cost > 0 || o.quote_total > 0
-      ? `<div class="track-panel">
-          <div class="track-section-title">Estimated Cost</div>
-          <div class="track-totals">
-            <div><div class="tt-label">Labor</div><div class="tt-value">${peso(o.labor_cost)}</div></div>
-            <div><div class="tt-label">Total</div><div class="tt-value">${peso(o.estimated_cost ?? o.quote_total)}</div></div>
-            ${o.actual_cost != null ? `<div><div class="tt-label">Actual</div><div class="tt-value">${peso(o.actual_cost)}</div></div>` : ''}
-          </div>
-        </div>`
-      : '';
-
-  const invoice = o.invoice
-    ? `<div class="track-panel">
-        <div class="track-section-title">Payment</div>
-        <div>Invoice ${esc(o.invoice.invoice_number)} ${badge(STATUS_BADGE[o.invoice.status] || 'grey', label(o.invoice.status))}</div>
-        <div class="pay-status">
-          Total ${peso(o.invoice.total)} &middot; Paid ${peso(o.invoice.amount_paid)}
-          <b>${o.invoice.balance > 0 ? `&middot; Balance ${peso(o.invoice.balance)}` : '&middot; Fully paid'}</b>
-        </div>
-      </div>`
-    : '';
-
-  const notes = [
-    ['Problem Description', o.problem_description],
-    ['Inspection Notes', o.inspection_notes],
-    ['Diagnosis', o.diagnosis],
-    ['Warranty', o.warranty_days ? `${o.warranty_days} days${o.warranty_notes ? ` &middot; ${esc(o.warranty_notes)}` : ''}` : (o.warranty_notes || null)],
-  ].filter(([, v]) => v).map(([t, v]) => `
-    <div class="track-panel">
-      <div class="track-section-title">${t}</div>
-      <p>${esc(v)}</p>
-    </div>`).join('');
+  const statusColor = STATUS_COLOR[o.status] || '#6b7280';
+  const priorityColor = PRIORITY_COLOR[o.priority] || '#6b7280';
 
   result.innerHTML = `
-    <div class="track-result">
-      <div class="track-top">
-        <button class="btn btn-primary" id="track-back-btn" type="button"><i class="bi bi-arrow-left"></i> Back</button>
-      </div>
-      <div class="track-head">
+    <div class="result">
+      <div class="result-head">
         <div>
-          <div class="track-ro">${esc(o.ro_number)}</div>
-          <div class="track-sub" style="margin-bottom:0;">${esc(o.item_description || 'Repair order')}${o.item_identifier ? ` &middot; ${esc(o.item_identifier)}` : ''}</div>
+          <div class="result-ro">${esc(o.ro_number)}</div>
+          <div class="result-sub">${esc(o.item_description || 'Repair order')}${o.item_identifier ? ` &middot; ${esc(o.item_identifier)}` : ''}</div>
         </div>
-        ${badge(STATUS_BADGE[o.status] || 'grey', label(o.status))}
+        ${badge(statusColor, label(o.status))}
       </div>
-      ${['cancelled', 'rejected'].includes(o.status) ? `<div class="cancel-banner">This repair order was ${o.status}.</div>` : stepper(o.status)}
-      <div class="track-grid">
-        <div><div class="track-label">Customer</div><div class="track-value">${esc(o.customer_name)}</div></div>
-        <div><div class="track-label">Priority</div><div class="track-value">${label(o.priority)}</div></div>
-        <div><div class="track-label">Received</div><div class="track-value">${dateFmt(o.created_at)}</div></div>
-        <div><div class="track-label">Last Updated</div><div class="track-value">${dateFmt(o.updated_at)}</div></div>
-        ${o.released_at ? `<div><div class="track-label">Released</div><div class="track-value">${dateFmt(o.released_at)}</div></div>` : ''}
-        ${o.completed_at ? `<div><div class="track-label">Completed</div><div class="track-value">${dateFmt(o.completed_at)}</div></div>` : ''}
+      ${['cancelled', 'rejected'].includes(o.status)
+        ? `<div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600;margin-bottom:16px;">This repair order was ${o.status}.</div>`
+        : stepper(o.status)}
+      <div class="detail-grid">
+        <div><div class="detail-label">Priority</div><div class="detail-value" style="color:${priorityColor};font-weight:600;">${label(o.priority)}</div></div>
+        <div><div class="detail-label">Date Received</div><div class="detail-value">${dateFmt(o.created_at)}</div></div>
+        <div><div class="detail-label">Last Updated</div><div class="detail-value">${dateFmt(o.updated_at)}</div></div>
+        ${o.released_at ? `<div><div class="detail-label">Released</div><div class="detail-value">${dateFmt(o.released_at)}</div></div>` : ''}
+        ${o.completed_at ? `<div><div class="detail-label">Completed</div><div class="detail-value">${dateFmt(o.completed_at)}</div></div>` : ''}
       </div>
-      ${notes}
-      ${parts}
-      ${invoice}
     </div>`;
-  document.getElementById('track-back-btn').addEventListener('click', goBack);
+
   result.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

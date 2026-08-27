@@ -3,20 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Track Your Repair · Repair Shop</title>
+<title>Track Your Repair · Precision Repair</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  .track-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 16px; }
-  .track-card{ width:100%; max-width:640px; background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(16,24,40,.1),0 8px 24px rgba(16,24,40,.08); padding:32px; }
-  .track-title{ font-size:20px; font-weight:700; margin:6px 0 2px; color:#111827; }
-  .track-sub{ font-size:13px; color:#6b7280; margin-bottom:20px; }
-  .track-lookup{ display:flex; gap:10px; flex-wrap:wrap; }
-  .track-lookup .field{ flex:1; min-width:200px; margin-bottom:0; }
-  .track-result{ margin-top:24px; border-top:1px solid #e5e7eb; padding-top:20px; }
-  .track-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .track-ro{ font-size:22px; font-weight:700; color:#111827; }
-  .stepper{ display:flex; align-items:flex-start; margin:22px 0; }
+  body{ margin:0; font-family:'Inter',sans-serif; background:#f3f4f6; color:#111827; }
+  .track-page{ min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 16px; }
+  .track-header{ text-align:center; margin-bottom:28px; }
+  .track-brand{ display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:12px; }
+  .track-brand-icon{ width:40px;height:40px;border-radius:10px;background:#2563EB;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff; }
+  .track-brand-name{ font-weight:700; font-size:16px; }
+  .track-card{ width:100%; max-width:520px; background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06); padding:32px; }
+  .track-title{ font-size:20px; font-weight:700; margin:0 0 4px; }
+  .track-sub{ font-size:13px; color:#6b7280; margin:0 0 20px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; color:#374151; margin-bottom:5px; }
+  .input{ width:100%; border:1px solid #e5e7eb; border-radius:8px; height:40px; padding:0 12px; font-size:14px; font-family:'Inter',sans-serif; color:#111827; background:#fff; outline:none; box-sizing:border-box; }
+  .input:focus{ border-color:#2563EB; box-shadow:0 0 0 3px #EFF6FF; }
+  .btn{ display:inline-flex; align-items:center; gap:6px; border:none; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; height:42px; padding:0 20px; transition:filter .1s; }
+  .btn-primary{ background:#2563EB; color:#fff; }
+  .btn-primary:hover{ background:#1D4ED8; }
+  .btn-secondary{ background:#fff; color:#374151; border:1px solid #d1d5db; }
+  .btn-secondary:hover{ background:#f9fafb; }
+  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .error-msg{ background:#FFF1F2; color:#BE123C; border:1px solid #FECDD3; border-radius:8px; padding:10px 14px; font-size:13px; font-weight:500; margin-top:12px; }
+  .result{ margin-top:24px; border-top:1px solid #e5e7eb; padding-top:20px; }
+  .result-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .result-ro{ font-size:22px; font-weight:700; }
+  .result-sub{ font-size:13px; color:#6b7280; margin-top:2px; }
+  .badge{ display:inline-flex; align-items:center; gap:5px; border-radius:9999px; font-size:12px; font-weight:600; padding:3px 10px; border:1px solid transparent; white-space:nowrap; }
+  .badge .bdot{ width:6px;height:6px;border-radius:50%; }
+  .stepper{ display:flex; align-items:flex-start; margin:20px 0; }
   .step{ flex:1; text-align:center; position:relative; }
   .step:not(:last-child)::after{ content:''; position:absolute; top:11px; left:calc(50% + 13px); right:calc(-50% + 13px); height:2px; background:#e5e7eb; }
   .step.done:not(:last-child)::after{ background:#10b981; }
@@ -24,55 +41,44 @@
   .step.done .step-dot{ border-color:#10b981; background:#10b981; color:#fff; }
   .step-label{ font-size:10px; font-weight:600; margin-top:6px; color:#6b7280; text-transform:capitalize; }
   .step.done .step-label{ color:#111827; }
-  .track-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; margin-bottom:18px; }
-  .track-label{ font-size:11px; font-weight:700; letter-spacing:.04em; color:#9ca3af; text-transform:uppercase; margin-bottom:2px; }
-  .track-value{ font-size:14px; font-weight:500; color:#111827; }
-  .track-notes{ margin-bottom:18px; }
-  .track-section-title{ font-size:12px; font-weight:700; letter-spacing:.04em; color:#6b7280; text-transform:uppercase; margin:0 0 10px; }
-  .track-panel{ border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; margin-bottom:12px; }
-  .track-panel p{ margin:0; font-size:14px; color:#374151; white-space:pre-wrap; }
-  .track-panel .muted{ color:#6b7280; font-style:italic; }
-  .track-table{ width:100%; border-collapse:collapse; font-size:13px; }
-  .track-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#9ca3af; padding:6px 8px; border-bottom:1px solid #e5e7eb; }
-  .track-table td{ padding:8px; border-bottom:1px solid #f3f4f6; color:#111827; }
-  .track-totals{ display:flex; justify-content:flex-end; gap:24px; margin-top:12px; text-align:right; }
-  .track-totals .tt-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#9ca3af; }
-  .track-totals .tt-value{ font-size:15px; font-weight:700; color:#111827; }
-  .cancel-banner{ background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:10px; padding:12px 16px; font-size:14px; font-weight:600; margin:18px 0; }
-  .pay-status{ font-size:13px; margin-top:8px; color:#374151; }
-  .login-error{ margin-top:12px; }
-  .track-top{ margin-bottom:16px; }
-  @media (max-width:560px){ .track-grid{ grid-template-columns:1fr; } .track-totals{ flex-direction:column; gap:8px; } }
+  .detail-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+  .detail-label{ font-size:11px; font-weight:700; letter-spacing:.04em; color:#9ca3af; text-transform:uppercase; margin-bottom:2px; }
+  .detail-value{ font-size:14px; font-weight:500; color:#111827; }
+  .back-link{ margin-top:20px; text-align:center; }
+  @media (max-width:560px){ .detail-grid{ grid-template-columns:1fr; } }
 </style>
 </head>
-<body class="login-body">
+<body>
 
-<div class="track-wrap">
-  <div class="track-card">
-    <div class="login-brand">
-      <div class="brand-icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
-      <div>
-        <div class="login-brand-name">Repair Shop</div>
-        <div class="login-brand-sub">PRECISION REPAIR</div>
-      </div>
+<div class="track-page">
+  <div class="track-header">
+    <div class="track-brand">
+      <div class="track-brand-icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+      <div class="track-brand-name">Precision Repair</div>
     </div>
+  </div>
 
-    <h1 class="track-title">Track your repair</h1>
-    <p class="track-sub">Enter the tracking code from the text or email you received, or paste your tracking link.</p>
+  <div class="track-card">
+    <h1 class="track-title">Track Your Repair</h1>
+    <p class="track-sub">Enter your order number and phone number or email to check your repair status.</p>
 
-    <form id="track-form" class="track-lookup" novalidate>
+    <form id="track-form" novalidate>
       <div class="field">
-        <label for="track-code">Tracking Code</label>
-        <input class="input" id="track-code" name="token" autocomplete="off" required placeholder="e.g. 8f3ab2c9d41e… or paste full link">
+        <label for="track-ro">Order Number</label>
+        <input class="input" id="track-ro" name="ro_number" placeholder="e.g. RO-8901" required>
       </div>
-      <div class="field" style="flex-basis:100%;">
-        <button class="btn btn-primary" id="track-btn" type="submit"><i class="bi bi-search"></i> Track</button>
+      <div class="field">
+        <label for="track-phone">Phone Number or Email</label>
+        <input class="input" id="track-phone" name="phone" placeholder="e.g. +63 917 123 4567 or name@email.com" required>
       </div>
+      <button class="btn btn-primary" id="track-btn" type="submit" style="width:100%;justify-content:center;"><i class="bi bi-search"></i> Track Repair</button>
     </form>
-    <div class="login-error" id="track-error" hidden></div>
-
+    <div class="error-msg" id="track-error" hidden></div>
     <div id="track-result"></div>
+  </div>
 
+  <div class="back-link">
+    <a href="/" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Home</a>
   </div>
 </div>
 
