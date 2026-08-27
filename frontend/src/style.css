@@ -339,6 +339,8 @@ tbody tr:hover{ background:var(--gray-50); }
 .login-btn:disabled{ opacity:.6; cursor:not-allowed; }
 .login-error{ background:var(--rose-50); color:var(--rose-700); border:1px solid #FECDD3; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:500; margin-bottom:12px; }
 .login-footer{ margin-top:22px; text-align:center; font-size:12px; color:var(--gray-400); }
+.login-footer a{ display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 16px; border:1px solid var(--gray-200); border-radius:6px; color:var(--gray-700); font-size:13px; font-weight:600; text-decoration:none; background:#fff; transition:background .1s; }
+.login-footer a:hover{ background:var(--gray-50); }
 
 /* INLINE STATUS SELECT (technician) */
 .status-select{ height:30px; border:1px solid var(--gray-200); border-radius:6px; padding:0 8px; font-size:12.5px; font-family:'Inter',sans-serif; color:var(--gray-900); background:#fff; outline:none; }
