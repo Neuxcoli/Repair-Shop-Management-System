@@ -187,9 +187,7 @@ body{
   font-family:'Inter',sans-serif; color:var(--gray-900); background:#fff; outline:none;
 }
 .search-wrap .input{ width:100%; padding-left:34px; }
-.input:focus, select.input:focus, textarea.input:focus{ border-color:var(--blue-600); box-shadow:0 0 0 3px var(--blue-50); }
-textarea.input{ padding:10px 12px; font-family:'Inter',sans-serif; resize:none; }
-
+.input:focus, select.input:focus{ border-color:var(--blue-600); box-shadow:0 0 0 3px var(--blue-50); }
 /* TABLE */
 table{ width:100%; border-collapse:collapse; }
 thead th{
