@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repair Shop · Precision Repair</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+      <div>
+        <div class="brand-name">Repair Shop</div>
+        <div class="brand-sub">PRECISION REPAIR</div>
+      </div>
+    </div>
+
+    <nav id="main-nav"></nav>
+
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="icon-btn" id="bell-btn" role="button" tabindex="0" aria-label="Notifications"><i class="bi bi-bell"></i><span class="dot" id="bell-dot"></span></div>
+      <div class="notif-panel" id="notif-panel" hidden>
+        <div class="notif-header">Notifications</div>
+        <div id="notif-list" class="notif-list"></div>
+      </div>
+      <div class="user-menu">
+        <div class="avatar" id="topbar-avatar" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">--</div>
+        <div class="user-menu-pop" id="user-menu-pop" hidden>
+          <div class="user-menu-head">
+            <div class="avatar-sm" id="user-menu-avatar">--</div>
+            <div>
+              <div class="user-menu-name" id="user-menu-name">—</div>
+              <div class="user-menu-role" id="user-menu-role">—</div>
+            </div>
+          </div>
+          <button class="user-menu-item" id="user-menu-changepw"><i class="bi bi-key"></i> Change password</button>
+          <button class="user-menu-item" id="user-menu-logout"><i class="bi bi-box-arrow-right"></i> Log out</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Workshop Overview</h1>
+            <p class="page-sub">Real-time status of your repair facility performance.</p>
+          </div>
+          <button class="btn btn-primary" data-open-modal="modal-order"><i class="bi bi-plus-lg"></i> New Repair Order</button>
+        </div>
+
+        <div class="kpi-row" id="dashboard-kpis">
+          <!-- populated by main.js -->
+        </div>
+
+        <div class="dash-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <h3 class="panel-title" id="dashboard-panel-title">Orders By Status</h3>
+              <a class="link-blue" href="#" data-goto-page="orders" id="dashboard-panel-link">View All Orders</a>
+            </div>
+            <div id="dashboard-status-breakdown"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header"><h3 class="panel-title" id="dashboard-panel-title-2">Recent Activity</h3></div>
+            <div id="dashboard-activity"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ REPAIR ORDERS ============ -->
+      <section class="page" id="page-orders">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Repair Orders</h1>
+            <p class="page-sub">Track every job from intake through invoicing.</p>
+          </div>
+          <button class="btn btn-primary" data-open-modal="modal-order"><i class="bi bi-plus-lg"></i> New Repair Order</button>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <select class="input" id="orders-status-filter" style="width:150px;">
+              <option value="">All Statuses</option>
+              <option value="requested">Requested</option>
+              <option value="diagnosed">Diagnosed</option>
+              <option value="approved">Approved</option>
+              <option value="in_progress">In Progress</option>
+              <option value="on_hold">On Hold</option>
+              <option value="completed">Completed</option>
+              <option value="invoiced">Invoiced</option>
+              <option value="closed">Closed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="orders-search" placeholder="Search by RO#, customer, or item..."></div>
+            <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
+          </div>
+
+          <table>
+            <thead>
+              <tr><th>RO #</th><th>Customer</th><th>Item</th><th>Technician</th><th>Priority</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="orders-table-body"></tbody>
+          </table>
+
+          <div class="pager-row">
+            <div class="pager-left" id="orders-count"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CUSTOMERS ============ -->
+      <section class="page" id="page-customers">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Customers</h1>
+            <p class="page-sub">A shop's clients and their repair history.</p>
+          </div>
+          <button class="btn btn-primary" data-open-modal="modal-customer"><i class="bi bi-plus-lg"></i> New Customer</button>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="customers-search" placeholder="Search customers..."></div>
+            <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
+          </div>
+
+          <table>
+            <thead><tr><th>Customer</th><th>Phone</th><th>Email</th><th></th></tr></thead>
+            <tbody id="customers-table-body"></tbody>
+          </table>
+          <div class="pager-row"><div class="pager-left" id="customers-count"></div></div>
+        </div>
+      </section>
+
+      <!-- ============ TECHNICIANS ============ -->
+      <section class="page" id="page-technicians">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Technicians</h1>
+            <p class="page-sub">Platform users assigned to perform repairs.</p>
+          </div>
+          <button class="btn btn-primary" data-open-modal="modal-technician"><i class="bi bi-plus-lg"></i> New Technician</button>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="technicians-search" placeholder="Search technicians..."></div>
+            <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
+          </div>
+          <table>
+            <thead><tr><th>Technician</th><th>Email</th><th>Specialty</th><th>Status</th><th style="text-align:center;">Workload</th><th></th></tr></thead>
+            <tbody id="technicians-table-body"></tbody>
+          </table>
+          <div class="pager-row"><div class="pager-left" id="technicians-count"></div></div>
+        </div>
+      </section>
+
+      <!-- ============ INVENTORY ============ -->
+      <section class="page" id="page-inventory">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Parts Inventory</h1>
+            <p class="page-sub">Stock levels and pricing tied to repair-order consumption.</p>
+          </div>
+          <button class="btn btn-primary" data-open-modal="modal-part"><i class="bi bi-plus-lg"></i> New Part</button>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="parts-search" placeholder="Search by SKU or part name..."></div>
+            <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
+          </div>
+          <table>
+            <thead><tr><th>SKU</th><th>Part Name</th><th>Qty On Hand</th><th>Unit Cost</th><th>Unit Price</th><th>Status</th><th></th></tr></thead>
+            <tbody id="parts-table-body"></tbody>
+          </table>
+          <div class="pager-row"><div class="pager-left" id="parts-count"></div></div>
+        </div>
+      </section>
+
+      <!-- ============ INVOICES ============ -->
+      <section class="page" id="page-invoices">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Invoices</h1>
+            <p class="page-sub">Billing records for completed repair orders.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <select class="input" id="invoices-status-filter" style="width:150px;">
+              <option value="">All Statuses</option>
+              <option value="unpaid">Unpaid</option>
+              <option value="partially_paid">Partially Paid</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Invoice #</th><th>RO #</th><th>Customer</th><th>Total</th><th>Issued</th><th>Paid</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="invoices-table-body"></tbody>
+          </table>
+          <div class="pager-row"><div class="pager-left" id="invoices-count"></div></div>
+        </div>
+      </section>
+
+      <!-- ============ PRICE LIST ============ -->
+      <section class="page" id="page-pricelist">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Price List</h1>
+            <p class="page-sub">Standard rates and fees for reference.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="modal-body" id="pricelist-content">
+            <div class="cell-sub">Loading price list…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="page" id="page-settings">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Settings</h1>
+            <p class="page-sub">Manage your shop profile, account, and business rules.</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- SHOP PROFILE -->
+          <div class="panel" id="settings-content">
+            <div class="panel-header"><h3 class="panel-title">Shop Profile</h3></div>
+            <form class="modal-body" id="form-settings">
+              <div class="field-row">
+                <div class="field">
+                  <label>Shop Name</label>
+                  <input class="input" name="shop_name" placeholder="e.g. Precision Repair">
+                </div>
+                <div class="field">
+                  <label>Phone</label>
+                  <input class="input" name="phone" placeholder="+63 9XX XXX XXXX">
+                </div>
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input class="input" name="email" placeholder="info@precisionrepair.com">
+              </div>
+              <div class="field">
+                <label>Address</label>
+                <textarea class="input" name="address" rows="2" placeholder="Street, city, province"></textarea>
+              </div>
+              <div class="field">
+                <label>Business Hours</label>
+                <textarea class="input" name="hours" rows="2" placeholder="e.g. Mon–Sat 8AM–6PM"></textarea>
+              </div>
+              <div class="modal-footer" style="padding:16px 0 0;">
+                <button class="btn btn-primary" type="button" id="settings-save"><i class="bi bi-check-lg"></i> Save Profile</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- ACCOUNT / SECURITY -->
+          <div class="panel" id="settings-account">
+            <div class="panel-header"><h3 class="panel-title">Account & Security</h3></div>
+            <div class="modal-body">
+              <div class="detail-grid" style="margin-bottom:20px;">
+                <div class="detail-item"><div class="detail-label">Username</div><div class="detail-value" id="settings-username">—</div></div>
+                <div class="detail-item"><div class="detail-label">Role</div><div class="detail-value" id="settings-role">—</div></div>
+              </div>
+              <form id="form-change-pw-settings">
+                <div class="field">
+                  <label>Current Password</label>
+                  <input class="input" type="password" name="current_password" autocomplete="current-password" required>
+                </div>
+                <div class="field">
+                  <label>New Password</label>
+                  <input class="input" type="password" name="new_password" autocomplete="new-password" minlength="6" required>
+                  <div class="cell-sub">At least 6 characters.</div>
+                </div>
+                <div class="field">
+                  <label>Confirm New Password</label>
+                  <input class="input" type="password" id="settings-confirm-pw" autocomplete="new-password" required>
+                </div>
+                <div class="login-error" id="settings-pw-error" hidden></div>
+                <div class="modal-footer" style="padding:16px 0 0;">
+                  <button class="btn btn-primary" type="button" id="settings-pw-save"><i class="bi bi-key"></i> Update Password</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- BUSINESS RULES (admin only) -->
+          <div class="panel" id="settings-business" hidden>
+            <div class="panel-header"><h3 class="panel-title">Business Rules</h3></div>
+            <form class="modal-body" id="form-business-rules">
+              <div class="field-row">
+                <div class="field">
+                  <label>Default Warranty (days)</label>
+                  <input class="input" name="default_warranty_days" type="number" min="0">
+                </div>
+                <div class="field">
+                  <label>Currency Symbol</label>
+                  <input class="input" name="currency_symbol" maxlength="5">
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Low-Stock Threshold (fallback)</label>
+                  <input class="input" name="low_stock_threshold" type="number" min="0">
+                  <div class="cell-sub">Used when a part doesn't have its own reorder threshold set.</div>
+                </div>
+              </div>
+
+              <div class="detail-section" style="background:var(--gray-50); margin-top:16px;">
+                <div class="detail-section-title">Pricing Defaults</div>
+                <div class="field-row">
+                  <div class="field">
+                    <label>Diagnostic Fee</label>
+                    <input class="input" name="diagnostic_fee" type="number" min="0" step="0.01">
+                    <div class="cell-sub">Base fee for initial inspection.</div>
+                  </div>
+                  <div class="field">
+                    <label>Standard Labor Rate</label>
+                    <input class="input" name="labor_rate" type="number" min="0" step="0.01">
+                    <div class="cell-sub">Per-hour labor charge.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-section" style="background:var(--gray-50); margin-top:16px;">
+                <div class="detail-section-title">Overdue Thresholds (hours)</div>
+                <div class="field-row">
+                  <div class="field">
+                    <label>Urgent</label>
+                    <input class="input" name="overdue_urgent_hours" type="number" min="1">
+                  </div>
+                  <div class="field">
+                    <label>High</label>
+                    <input class="input" name="overdue_high_hours" type="number" min="1">
+                  </div>
+                  <div class="field">
+                    <label>Normal</label>
+                    <input class="input" name="overdue_normal_hours" type="number" min="1">
+                  </div>
+                  <div class="field">
+                    <label>Low</label>
+                    <input class="input" name="overdue_low_hours" type="number" min="1">
+                  </div>
+                </div>
+                <div class="cell-sub">An order is flagged overdue if it's been open longer than its priority's threshold.</div>
+              </div>
+
+              <div class="modal-footer" style="padding:16px 0 0;">
+                <button class="btn btn-primary" type="button" id="settings-business-save"><i class="bi bi-check-lg"></i> Save Rules</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: NEW REPAIR ORDER ================= -->
+<div class="modal-overlay" id="modal-order">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">New Repair Order</h3>
+      <button class="modal-close" data-close-modal="modal-order">&times;</button>
+    </div>
+    <form class="modal-body" id="form-order">
+      <div class="field-row">
+        <div class="field">
+          <label>Customer</label>
+          <div class="combobox">
+            <input class="input" id="order-customer-input" placeholder="Type to search or add a customer…" autocomplete="off" required>
+            <ul class="combobox-list" id="order-customer-list"></ul>
+          </div>
+          <input type="hidden" name="customer_id" id="order-customer-id">
+        </div>
+        <div class="field">
+          <label>Item / Vehicle</label>
+          <div class="combobox">
+            <input class="input" id="order-item-input" placeholder="Search an item, or choose + New item" autocomplete="off" required>
+            <ul class="combobox-list" id="order-item-list"></ul>
+          </div>
+          <input type="hidden" name="item_id" id="order-item-id">
+        </div>
+      </div>
+      <div id="order-new-item-fields" hidden>
+        <div class="field-row">
+          <div class="field">
+            <label>Item Description</label>
+            <input class="input" id="new-item-description" placeholder="e.g. 2021 Honda Civic" required>
+          </div>
+          <div class="field">
+            <label>Identifier</label>
+            <input class="input" id="new-item-identifier" placeholder="e.g. ABC-123 / SN">
+          </div>
+        </div>
+        <div class="field">
+          <label>Item Type</label>
+          <select class="input" id="new-item-type">
+            <option value="">Select type…</option>
+            <option value="vehicle">Vehicle</option>
+            <option value="appliance">Appliance</option>
+            <option value="electronics">Electronics</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Problem Description</label>
+        <textarea class="input" name="problem_description" rows="3" placeholder="Describe the issue reported by the customer..."></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Priority</label>
+          <select class="input" name="priority">
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div class="field" id="order-technician-field">
+          <label>Assign Technician <span style="color:var(--gray-400); font-weight:400;">(optional)</span></label>
+          <select class="input" name="technician_id" id="order-technician-select"></select>
+        </div>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-order">Cancel</button>
+      <button class="btn btn-primary" data-submit-form="form-order">Create Repair Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: REPAIR ORDER DETAIL ================= -->
+<div class="modal-overlay" id="modal-order-detail">
+  <div class="modal modal-wide" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title" id="order-detail-title">Repair Order</h3>
+      <span id="order-detail-badge"></span>
+      <button class="modal-close" data-close-modal="modal-order-detail">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">RO #</div><div class="detail-value" id="od-ro">—</div></div>
+        <div class="detail-item"><div class="detail-label">Customer</div><div class="detail-value" id="od-customer">—</div></div>
+        <div class="detail-item"><div class="detail-label">Item</div><div class="detail-value" id="od-item">—</div></div>
+        <div class="detail-item"><div class="detail-label">Technician</div><div class="detail-value" id="od-technician">—</div></div>
+        <div class="detail-item"><div class="detail-label">Priority</div><div class="detail-value" id="od-priority">—</div></div>
+        <div class="detail-item"><div class="detail-label">Created</div><div class="detail-value" id="od-created">—</div></div>
+      </div>
+
+      <div class="field" style="margin-bottom:4px;">
+        <label>Customer Tracking Link</label>
+        <div style="display:flex; gap:8px;">
+          <input class="input" id="od-track-link" readonly>
+          <button class="btn btn-secondary" id="od-copy-link" type="button"><i class="bi bi-clipboard"></i> Copy</button>
+        </div>
+        <div class="cell-sub" style="margin-top:4px;">Send this to the customer — it&rsquo;s their private way to check this order.</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Intake & Inspection</div>
+        <div class="field">
+          <label>Problem Description</label>
+          <textarea class="input" id="od-problem" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label>Inspection Notes</label>
+          <textarea class="input" id="od-inspection" rows="2" placeholder="Notes from the physical inspection..."></textarea>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Diagnosis & Quote</div>
+        <div class="field">
+          <label>Diagnosis</label>
+          <textarea class="input" id="od-diagnosis" rows="2" placeholder="Root cause / needed repairs..."></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Labor Cost</label>
+            <input class="input" id="od-labor" type="number" min="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>Estimated Cost</label>
+            <input class="input" id="od-estimated" type="number" min="0" step="0.01" placeholder="Required before approval">
+          </div>
+          <div class="field">
+            <label>Parts Total</label>
+            <input class="input" id="od-parts-total" disabled>
+          </div>
+          <div class="field">
+            <label>Quote Total</label>
+            <input class="input" id="od-quote-total" disabled>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Actual Cost</label>
+            <input class="input" id="od-actual" disabled placeholder="Set when completed">
+          </div>
+          <div class="field">
+            <label>Completed At</label>
+            <input class="input" id="od-completed" disabled placeholder="—">
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Parts Used</div>
+        <div class="table-wrap">
+          <table id="od-parts-table">
+            <thead><tr><th>Part</th><th>Qty</th><th>Unit Price</th><th>Line Total</th><th></th></tr></thead>
+            <tbody id="od-parts-body"></tbody>
+          </table>
+        </div>
+        <div class="field-row" id="od-add-part" hidden>
+          <div class="field">
+            <label>Part</label>
+            <select class="input" id="od-part-select"></select>
+          </div>
+          <div class="field" style="max-width:90px;">
+            <label>Qty</label>
+            <input class="input" id="od-part-qty" type="number" min="1" value="1">
+          </div>
+          <div class="field" style="max-width:110px;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" id="od-part-add">Add Part</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Status · Warranty · Release</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Status</label>
+            <select class="input" id="od-status"></select>
+          </div>
+          <div class="field">
+            <label>Warranty (days)</label>
+            <input class="input" id="od-warranty-days" type="number" min="0">
+          </div>
+          <div class="field">
+            <label>Released At</label>
+            <input class="input" id="od-released" disabled>
+          </div>
+        </div>
+        <div class="field">
+          <label>Warranty Notes</label>
+          <textarea class="input" id="od-warranty-notes" rows="2" placeholder="e.g. 30 days labor, 90 days parts..."></textarea>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Status History</div>
+        <div class="status-timeline" id="od-status-history"></div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Invoice & Payments</div>
+        <div id="od-invoice"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-order-detail">Close</button>
+      <button class="btn btn-primary" id="od-save">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: NEW CUSTOMER ================= -->
+<div class="modal-overlay" id="modal-customer">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">New Customer</h3>
+      <button class="modal-close" data-close-modal="modal-customer">&times;</button>
+    </div>
+    <form class="modal-body" id="form-customer">
+      <div class="field">
+        <label>Full Name</label>
+        <input class="input" name="full_name" placeholder="e.g. Sarah Jenkins" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Phone</label>
+          <input class="input" name="phone" placeholder="+63 9XX XXX XXXX">
+        </div>
+        <div class="field">
+          <label>Email <span style="color:var(--gray-400); font-weight:400;">(optional)</span></label>
+          <input class="input" name="email" placeholder="name@email.com">
+        </div>
+      </div>
+      <div class="field">
+        <label>Address <span style="color:var(--gray-400); font-weight:400;">(optional)</span></label>
+        <textarea class="input" name="address" rows="2" placeholder="Street, city, province"></textarea>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-customer">Cancel</button>
+      <button class="btn btn-primary" data-submit-form="form-customer">Save Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: NEW TECHNICIAN ================= -->
+<div class="modal-overlay" id="modal-technician">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">New Technician</h3>
+      <button class="modal-close" data-close-modal="modal-technician">&times;</button>
+    </div>
+    <form class="modal-body" id="form-technician">
+      <div class="field">
+        <label>Full Name</label>
+        <input class="input" name="full_name" placeholder="e.g. David Santos" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Email</label>
+          <input class="input" name="email" placeholder="name@precisionrepair.com" required>
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input class="input" name="phone" placeholder="+63 9XX XXX XXXX">
+        </div>
+      </div>
+      <div class="field">
+        <label>Specialty</label>
+        <select class="input" name="specialty">
+          <option>Automotive</option>
+          <option>Electronics</option>
+          <option>Appliances</option>
+          <option>General</option>
+        </select>
+      </div>
+      <div class="detail-section" style="background:var(--gray-50);">
+        <div class="detail-section-title">Login Account</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Username <span style="color:var(--gray-400); font-weight:400;">(blank = auto)</span></label>
+            <input class="input" name="username" placeholder="auto-generated if blank" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Password <span style="color:var(--gray-400); font-weight:400;">(blank = tech123)</span></label>
+            <input class="input" name="password" placeholder="leave blank for tech123" autocomplete="new-password">
+          </div>
+        </div>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-technician">Cancel</button>
+      <button class="btn btn-primary" data-submit-form="form-technician">Save Technician</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: NEW PART ================= -->
+<div class="modal-overlay" id="modal-part">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">New Part</h3>
+      <button class="modal-close" data-close-modal="modal-part">&times;</button>
+    </div>
+    <form class="modal-body" id="form-part">
+      <div class="field-row">
+        <div class="field">
+          <label>SKU</label>
+          <input class="input" name="sku" placeholder="e.g. BRK-2201" required>
+        </div>
+        <div class="field">
+          <label>Part Name</label>
+          <input class="input" name="name" placeholder="e.g. Brake Pad Set (Front)" required>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Qty On Hand</label>
+          <input class="input" type="number" name="qty_on_hand" placeholder="0" value="0">
+        </div>
+        <div class="field">
+          <label>Reorder Threshold</label>
+          <input class="input" type="number" name="reorder_threshold" placeholder="5" value="5">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Unit Cost</label>
+          <input class="input" type="number" step="0.01" name="unit_cost" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>Unit Price</label>
+          <input class="input" type="number" step="0.01" name="unit_price" placeholder="0.00">
+        </div>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-part">Cancel</button>
+      <button class="btn btn-primary" data-submit-form="form-part">Save Part</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-password">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">Change Password</h3>
+      <button class="modal-close" data-close-modal="modal-password">&times;</button>
+    </div>
+    <form class="modal-body" id="form-password">
+      <div class="field">
+        <label>Current Password</label>
+        <input class="input" type="password" name="current_password" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label>New Password</label>
+        <input class="input" type="password" name="new_password" autocomplete="new-password" minlength="6" required>
+        <div class="cell-sub">At least 6 characters.</div>
+      </div>
+      <div class="field">
+        <label>Confirm New Password</label>
+        <input class="input" type="password" id="confirm-password" autocomplete="new-password" required>
+      </div>
+      <div class="login-error" id="password-error" hidden></div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-password">Cancel</button>
+      <button class="btn btn-primary" id="change-pw-submit">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: CUSTOMER DETAIL ================= -->
+<div class="modal-overlay" id="modal-customer-detail">
+  <div class="modal modal-wide" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">Customer Details</h3>
+      <button class="modal-close" data-close-modal="modal-customer-detail">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Name</div><div class="detail-value" id="cust-detail-name">—</div></div>
+        <div class="detail-item"><div class="detail-label">Phone</div><div class="detail-value" id="cust-detail-phone">—</div></div>
+        <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value" id="cust-detail-email">—</div></div>
+        <div class="detail-item"><div class="detail-label">Address</div><div class="detail-value" id="cust-detail-address">—</div></div>
+        <div class="detail-item"><div class="detail-label">Customer Since</div><div class="detail-value" id="cust-detail-created">—</div></div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Repair History</div>
+        <table>
+          <thead><tr><th>RO #</th><th>Item</th><th>Technician</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead>
+          <tbody id="cust-detail-orders-body"></tbody>
+        </table>
+        <div class="pager-row"><div class="pager-left" id="cust-detail-orders-count"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-customer-detail">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: EDIT INVOICE ================= -->
+<div class="modal-overlay" id="modal-invoice-edit">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">Edit Invoice</h3>
+      <button class="modal-close" data-close-modal="modal-invoice-edit">&times;</button>
+    </div>
+    <form class="modal-body" id="form-invoice-edit">
+      <input type="hidden" id="inv-edit-id">
+      <div class="field-row">
+        <div class="field">
+          <label>Total</label>
+          <input class="input" id="inv-edit-total" type="number" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select class="input" id="inv-edit-status">
+            <option value="unpaid">Unpaid</option>
+            <option value="partially_paid">Partially Paid</option>
+            <option value="paid">Paid</option>
+            <option value="void">Void</option>
+          </select>
+        </div>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-invoice-edit">Cancel</button>
+      <button class="btn btn-primary" id="invoice-edit-save">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -197,6 +197,89 @@ class PaymentOut(BaseModel):
     paid_at: datetime
 
 
+# ---------- Invoice Update / Void ----------
+class InvoiceUpdate(BaseModel):
+    total: Optional[float] = None
+    status: Optional[InvoiceStatus] = None
+
+
+# ---------- Shop Settings ----------
+class ShopSettingsOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    shop_name: str
+    address: str
+    phone: str
+    email: str
+    hours: str
+    default_warranty_days: int
+    currency_symbol: str
+    overdue_urgent_hours: int
+    overdue_high_hours: int
+    overdue_normal_hours: int
+    overdue_low_hours: int
+    low_stock_threshold: int
+    diagnostic_fee: float
+    labor_rate: float
+    updated_at: datetime
+
+
+class ShopSettingsUpdate(BaseModel):
+    shop_name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    hours: Optional[str] = None
+    default_warranty_days: Optional[int] = None
+    currency_symbol: Optional[str] = None
+    overdue_urgent_hours: Optional[int] = None
+    overdue_high_hours: Optional[int] = None
+    overdue_normal_hours: Optional[int] = None
+    overdue_low_hours: Optional[int] = None
+    low_stock_threshold: Optional[int] = None
+    diagnostic_fee: Optional[float] = None
+    labor_rate: Optional[float] = None
+
+
+# ---------- Technician Workload ----------
+class TechnicianWorkloadOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    full_name: str
+    email: str
+    specialty: str
+    status: str
+    total_orders: int = 0
+    open_orders: int = 0
+    completed_orders: int = 0
+
+
+# ---------- Customer Orders (drill-down) ----------
+class CustomerOrderOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    ro_number: str
+    status: str
+    priority: str
+    item_description: Optional[str] = None
+    item_identifier: Optional[str] = None
+    technician_name: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+
+# ---------- Customer portal (self-service) ----------
+class PortalItemCreate(BaseModel):
+    description: str
+    identifier: Optional[str] = None
+    item_type: Optional[str] = None
+
+
+class PortalOrderCreate(BaseModel):
+    item_id: int
+    problem_description: Optional[str] = None
+
+
 # ---------- Dashboard ----------
 class DashboardSummary(BaseModel):
     open_orders: int
@@ -209,6 +292,14 @@ class DashboardSummary(BaseModel):
 # ---------- Auth ----------
 class LoginRequest(BaseModel):
     username: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+    address: Optional[str] = None
     password: str
 
 
@@ -225,6 +316,7 @@ class UserOut(BaseModel):
     full_name: Optional[str] = None
     customer_id: Optional[int] = None
     technician_id: Optional[int] = None
+    permissions: list[str] = Field(default_factory=list)
 
 
 class LoginResponse(BaseModel):

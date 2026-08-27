@@ -27,9 +27,7 @@ export function clearAuth() {
 
 export function redirectToLogin() {
   clearAuth();
-  if (!window.location.pathname.endsWith('/login.html')) {
-    window.location.href = '/login.html';
-  }
+  window.location.href = '/staff-login.html';
 }
 
 async function request(path, options = {}) {
@@ -38,7 +36,7 @@ async function request(path, options = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(BASE + path, { ...options, headers });
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
     redirectToLogin();
     throw new Error('Not authorized');
   }
@@ -66,8 +64,30 @@ export const api = {
       if (!res.ok) throw new Error(body?.detail || `${res.status} ${res.statusText}`);
       return body;
     },
+    register: async (data) => {
+      const res = await fetch(BASE + '/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.detail || `${res.status} ${res.statusText}`);
+      return body;
+    },
     me: () => request('/auth/me'),
     changePassword: (data) => request('/auth/password', { method: 'PUT', body: JSON.stringify(data) }),
+  },
+  portal: {
+    items: {
+      list: () => request('/portal/items'),
+      create: (data) => request('/portal/items', { method: 'POST', body: JSON.stringify(data) }),
+    },
+    orders: {
+      list: () => request('/portal/orders'),
+      get: (id) => request(`/portal/orders/${id}`),
+      create: (data) => request('/portal/orders', { method: 'POST', body: JSON.stringify(data) }),
+      cancel: (id) => request(`/portal/orders/${id}/cancel`, { method: 'POST' }),
+    },
   },
   dashboard: {
     summary: () => request('/dashboard/summary'),
@@ -77,12 +97,14 @@ export const api = {
     create: (data) => request('/customers', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => request(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id) => request(`/customers/${id}`, { method: 'DELETE' }),
+    orders: (id) => request(`/customers/${id}/orders`),
   },
   technicians: {
     list: (q = '') => request(`/technicians${q ? `?q=${encodeURIComponent(q)}` : ''}`),
     create: (data) => request('/technicians', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => request(`/technicians/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id) => request(`/technicians/${id}`, { method: 'DELETE' }),
+    workload: () => request('/technicians/workload'),
   },
   items: {
     list: (customerId) => request(`/items${customerId ? `?customer_id=${customerId}` : ''}`),
@@ -112,9 +134,16 @@ export const api = {
       return request(`/invoices${qs ? `?${qs}` : ''}`);
     },
     create: (data) => request('/invoices', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/invoices/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (id) => request(`/invoices/${id}`, { method: 'DELETE' }),
+    void: (id) => request(`/invoices/${id}/void`, { method: 'PUT' }),
   },
   payments: {
     list: (invoiceId) => request(`/payments${invoiceId ? `?invoice_id=${invoiceId}` : ''}`),
     create: (data) => request('/payments', { method: 'POST', body: JSON.stringify(data) }),
+  },
+  settings: {
+    get: () => request('/settings'),
+    update: (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) }),
   },
 };

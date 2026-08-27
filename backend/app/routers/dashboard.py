@@ -46,11 +46,16 @@ def summary(db: Session = Depends(get_db)):
     else:
         avg_turnaround = 0.0
 
+    low_stock_threshold = 5
+    settings = db.query(models.ShopSettings).first()
+    if settings and settings.low_stock_threshold is not None:
+        low_stock_threshold = settings.low_stock_threshold
+
     low_stock_parts = (
         db.query(models.Part)
         .filter(
             models.Part.deleted_at.is_(None),
-            models.Part.qty_on_hand <= models.Part.reorder_threshold,
+            models.Part.qty_on_hand <= func.coalesce(models.Part.reorder_threshold, low_stock_threshold),
         )
         .count()
     )

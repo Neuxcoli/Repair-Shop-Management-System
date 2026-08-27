@@ -1,3 +1,6 @@
+import os
+import sys
+
 import bcrypt
 
 from app import models
@@ -36,11 +39,18 @@ def upsert_user(username, password, role, customer_id=None, technician_id=None):
     print(f"created user: {username} ({role})")
 
 
-technician = get_or_create_technician("Jenny Dela Cruz", "jenny.d@precisionrepair.com")
+if __name__ == "__main__":
+    admin_password = os.getenv("ADMIN_PASSWORD")
+    tech_password = os.getenv("TECH_PASSWORD")
+    if not admin_password or not tech_password:
+        print("Set ADMIN_PASSWORD and TECH_PASSWORD env vars to seed the admin and technician accounts.")
+        sys.exit(1)
 
-upsert_user("tech_jenny", "jenny123", "technician", technician_id=technician.id)
-upsert_user("superadmin", "admin123", "admin")
+    technician = get_or_create_technician("Jenny Dela Cruz", "jenny.d@precisionrepair.com")
 
-db.commit()
-db.close()
-print("done")
+    upsert_user("tech_jenny", tech_password, "technician", technician_id=technician.id)
+    upsert_user("superadmin", admin_password, "admin")
+
+    db.commit()
+    db.close()
+    print("done")

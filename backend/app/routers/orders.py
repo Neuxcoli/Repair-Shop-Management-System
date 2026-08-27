@@ -230,11 +230,6 @@ def update_order(
         forbidden = set(data) - allowed
         if forbidden:
             raise HTTPException(403, "Insufficient permissions")
-    elif user.role == "front_desk":
-        allowed = {"problem_description", "priority"}
-        forbidden = set(data) - allowed
-        if forbidden:
-            raise HTTPException(403, "Insufficient permissions")
 
     status = data.pop("status", None)
     if status is not None:

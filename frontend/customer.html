@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Repair Dashboard · Repair Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="portal">
+  <header class="portal-topbar">
+    <div class="portal-brand">
+      <div class="brand-icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+      <div>
+        <div class="login-brand-name">Repair Shop</div>
+        <div class="login-brand-sub">CUSTOMER PORTAL</div>
+      </div>
+    </div>
+    <div class="portal-user">
+      <span class="portal-name" id="portal-name">—</span>
+      <button class="btn btn-secondary btn-sm" id="portal-logout"><i class="bi bi-box-arrow-right"></i> Log out</button>
+    </div>
+  </header>
+
+  <div class="portal-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">My Repair Dashboard</h1>
+        <p class="page-sub">Submit a repair request and follow its progress.</p>
+      </div>
+    </div>
+
+    <div class="customer-grid">
+      <div class="panel">
+        <div class="panel-header"><h3 class="panel-title">Submit a Repair Request</h3></div>
+        <div class="panel-body">
+          <form id="portal-order-form" novalidate>
+            <div class="field">
+              <label for="portal-item-select">Item / Vehicle</label>
+              <select class="input" id="portal-item-select" required>
+                <option value="">Select your item…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="check-label"><input type="checkbox" id="portal-new-item-toggle"> I need to add a new item</label>
+            </div>
+            <div id="portal-new-item-fields" hidden>
+              <div class="field">
+                <label for="portal-item-desc">New Item Description</label>
+                <input class="input" id="portal-item-desc" placeholder="e.g. 2021 Honda Civic">
+              </div>
+              <div class="field">
+                <label for="portal-item-identifier">Identifier (plate / serial)</label>
+                <input class="input" id="portal-item-identifier" placeholder="e.g. ABC-123">
+              </div>
+            </div>
+            <div class="field">
+              <label for="portal-problem">What seems to be the problem?</label>
+              <textarea class="input" id="portal-problem" rows="3" placeholder="Describe the issue…" required></textarea>
+            </div>
+            <button class="btn btn-primary" id="portal-submit" type="submit"><i class="bi bi-send"></i> Submit Request</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">My Repair Orders</h3>
+          <span class="pager-left" id="portal-order-count"></span>
+        </div>
+        <div id="portal-orders-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Order detail modal -->
+<div class="modal-overlay" id="portal-modal-detail">
+  <div class="modal">
+    <div class="modal-header" style="cursor:default;">
+      <h3 class="modal-title" id="portal-detail-title">Repair Order</h3>
+      <button class="modal-close" data-close-modal="portal-modal-detail">&times;</button>
+    </div>
+    <div class="modal-body" id="portal-detail-body"></div>
+  </div>
+</div>
+
+<script type="module" src="/src/customer.js"></script>
+</body>
+</html>

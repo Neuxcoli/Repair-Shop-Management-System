@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .database import Base, engine
-from .routers import auth, customers, technicians, items, parts, orders, invoices, payments, dashboard, public
+from .routers import auth, customers, technicians, items, parts, orders, invoices, payments, dashboard, public, settings
 
 Base.metadata.create_all(bind=engine)
 
@@ -31,6 +31,7 @@ app.include_router(invoices.router)
 app.include_router(payments.router)
 app.include_router(dashboard.router)
 app.include_router(public.router)
+app.include_router(settings.router)
 
 
 @app.get("/api/health")

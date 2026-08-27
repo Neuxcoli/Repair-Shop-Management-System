@@ -51,6 +51,29 @@ def list_technicians(
     return query.order_by(models.Technician.id).all()
 
 
+@router.get("/workload", response_model=list[schemas.TechnicianWorkloadOut])
+def technician_workload(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission("technician.view", "technician.manage")),
+):
+    technicians = db.query(models.Technician).filter(models.Technician.deleted_at.is_(None)).all()
+    result = []
+    for t in technicians:
+        all_orders = [o for o in t.orders if o.deleted_at is None]
+        open_statuses = {"requested", "diagnosed", "approved", "in_progress", "on_hold"}
+        result.append(schemas.TechnicianWorkloadOut(
+            id=t.id,
+            full_name=t.full_name,
+            email=t.email,
+            specialty=t.specialty,
+            status=t.status.value if isinstance(t.status, models.TechnicianStatus) else t.status,
+            total_orders=len(all_orders),
+            open_orders=sum(1 for o in all_orders if (o.status.value if isinstance(o.status, models.OrderStatus) else o.status) in open_statuses),
+            completed_orders=sum(1 for o in all_orders if (o.status.value if isinstance(o.status, models.OrderStatus) else o.status) in {"completed", "invoiced", "closed"}),
+        ))
+    return result
+
+
 @router.post("", response_model=schemas.TechnicianOut, status_code=201)
 def create_technician(
     payload: schemas.TechnicianCreate,

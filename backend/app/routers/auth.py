@@ -3,14 +3,20 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, ROLE_PERMISSIONS
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+def to_user_out(user: models.User) -> schemas.UserOut:
+    out = schemas.UserOut.model_validate(user)
+    out.permissions = sorted(ROLE_PERMISSIONS.get(user.role, set()))
+    return out
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -33,7 +39,11 @@ def create_access_token(user: models.User) -> str:
 
 
 @router.post("/login", response_model=schemas.LoginResponse)
-def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
+def login(
+    payload: schemas.LoginRequest,
+    db: Session = Depends(get_db),
+    login_as: str | None = Query(default=None),
+):
     user = (
         db.query(models.User)
         .filter(models.User.username == payload.username, models.User.deleted_at.is_(None))
@@ -41,15 +51,26 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     )
     if not user or not verify_password(payload.password, user.password):
         raise HTTPException(401, "Invalid username or password")
+
+    if login_as == "technician" and user.role != "technician":
+        raise HTTPException(403, "This login is for technicians only.")
+    if login_as == "admin" and user.role != "admin":
+        raise HTTPException(403, "This login is for administrators only.")
+
     return schemas.LoginResponse(
         access_token=create_access_token(user),
-        user=schemas.UserOut.model_validate(user),
+        user=to_user_out(user),
     )
+
+
+@router.post("/register", response_model=schemas.LoginResponse)
+def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
+    raise HTTPException(404, "Self-registration is not available.")
 
 
 @router.get("/me", response_model=schemas.UserOut)
 def me(user: models.User = Depends(get_current_user)):
-    return user
+    return to_user_out(user)
 
 
 @router.put("/password", response_model=schemas.UserOut)
@@ -65,4 +86,4 @@ def change_password(
     user.password = hash_password(payload.new_password)
     db.commit()
     db.refresh(user)
-    return user
+    return to_user_out(user)

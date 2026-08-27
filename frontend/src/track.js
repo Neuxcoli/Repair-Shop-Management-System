@@ -1,25 +1,12 @@
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './style.css';
+import { badge, dateFmt, esc, label, peso, STATUS_BADGE } from './ui.js';
 
-const STATUS_BADGE = {
-  requested: 'grey', diagnosed: 'blue', approved: 'amber',
-  in_progress: 'amber', on_hold: 'amber', completed: 'green',
-  invoiced: 'blue', closed: 'green', cancelled: 'rose', rejected: 'rose',
-};
 const STEPS = ['requested', 'diagnosed', 'approved', 'in_progress', 'completed', 'closed'];
 const STATUS_INDEX = {
   requested: 0, diagnosed: 1, approved: 2,
   in_progress: 3, on_hold: 3, completed: 4, invoiced: 4, closed: 5,
 };
-
-const peso = (n) => `₱${Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
-const dateFmt = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-const label = (s) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-function badge(kind, text) {
-  return `<span class="badge badge-${kind}"><span class="bdot"></span>${text}</span>`;
-}
 
 function stepper(status) {
   const idx = STATUS_INDEX[status] ?? -1;

@@ -1,6 +1,6 @@
 -- Sample data mirroring the original static mockup
 
--- Admin account (bcrypt hash of "admin123"); roles: admin
+-- Admin account (bcrypt hash; bootstrap login for fresh installs); roles: admin
 INSERT INTO repairshop_users (username, password, role) VALUES
   ('superadmin', '$2b$12$jm0JAGi8zLKg7fQXjsakvOkhwz1U9WXntEmp0ogTwXAitNCsilcxO', 'admin');
 

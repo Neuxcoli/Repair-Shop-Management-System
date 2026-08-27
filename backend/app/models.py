@@ -209,6 +209,27 @@ class Payment(Base):
     invoice = relationship("Invoice")
 
 
+class ShopSettings(Base):
+    __tablename__ = "repairshop_shop_settings"
+
+    id = Column(Integer, primary_key=True)
+    shop_name = Column(String(200), default="Precision Repair")
+    address = Column(Text, default="")
+    phone = Column(String(30), default="")
+    email = Column(String(150), default="")
+    hours = Column(Text, default="")
+    default_warranty_days = Column(Integer, default=30)
+    currency_symbol = Column(String(10), default="₱")
+    overdue_urgent_hours = Column(Integer, default=4)
+    overdue_high_hours = Column(Integer, default=24)
+    overdue_normal_hours = Column(Integer, default=72)
+    overdue_low_hours = Column(Integer, default=168)
+    low_stock_threshold = Column(Integer, default=5)
+    diagnostic_fee = Column(Numeric(12, 2), default=500)
+    labor_rate = Column(Numeric(12, 2), default=750)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class User(Base):
     __tablename__ = "repairshop_users"
 
@@ -226,4 +247,8 @@ class User(Base):
 
     @property
     def full_name(self) -> str | None:
-        return self.technician.full_name if self.technician else None
+        if self.customer:
+            return self.customer.full_name
+        if self.technician:
+            return self.technician.full_name
+        return self.username

@@ -2,10 +2,6 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './style.css';
 import { api, getToken, setAuth } from './api.js';
 
-if (getToken()) {
-  window.location.href = '/';
-}
-
 const form = document.getElementById('login-form');
 const errorEl = document.getElementById('login-error');
 const btn = document.getElementById('login-btn');
@@ -22,7 +18,7 @@ form.addEventListener('submit', async (e) => {
       password: form.password.value,
     });
     setAuth(data.access_token, data.user);
-    window.location.href = '/';
+    window.location.href = '/admin.html';
   } catch (err) {
     errorEl.textContent = err.message || 'Sign in failed.';
     errorEl.hidden = false;

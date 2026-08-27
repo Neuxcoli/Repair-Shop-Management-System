@@ -1,53 +1,22 @@
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './style.css';
 import { api, getStoredUser, redirectToLogin } from './api.js';
+import { badge, dateFmt, esc, initials, label, peso, PRIORITY_BADGE, STATUS_BADGE, INVOICE_BADGE, TECH_BADGE, showToast } from './ui.js';
 
 // ---------- Auth guard ----------
 let currentUser = getStoredUser();
 if (!currentUser || !localStorage.getItem('rs_token')) {
-  window.location.href = '/login.html';
+  localStorage.removeItem('rs_token');
+  localStorage.removeItem('rs_user');
+  window.location.href = '/staff-login.html';
 }
 
 const ROLE_LABEL = {
   admin: 'Administrator',
-  manager: 'Manager',
   technician: 'Technician',
-  front_desk: 'Front Desk',
-  parts_staff: 'Parts Staff',
 };
 
-// Mirrors backend ROLE_PERMISSIONS in app/dependencies.py.
-const ROLE_PERMISSIONS = {
-  front_desk: [
-    'repair_order.view.all', 'repair_order.create',
-    'customer.view', 'customer.manage',
-    'invoice.view', 'invoice.create',
-    'parts.view', 'dashboard.view',
-  ],
-  technician: [
-    'repair_order.view', 'repair_order.diagnose', 'repair_order.start',
-    'repair_order.complete', 'repair_order.parts.add',
-    'parts.view', 'dashboard.view',
-  ],
-  parts_staff: ['parts.view', 'parts.manage', 'dashboard.view'],
-  manager: [
-    'repair_order.view.all', 'repair_order.create', 'repair_order.diagnose',
-    'repair_order.approve', 'repair_order.assign', 'repair_order.start',
-    'repair_order.complete', 'repair_order.cancel', 'repair_order.parts.add',
-    'customer.view', 'customer.manage', 'parts.view', 'parts.manage',
-    'invoice.view', 'invoice.create', 'payment.record', 'technician.view',
-    'technician.manage', 'dashboard.view', 'record.delete',
-  ],
-  admin: [
-    'repair_order.view.all', 'repair_order.create', 'repair_order.diagnose',
-    'repair_order.approve', 'repair_order.assign', 'repair_order.start',
-    'repair_order.complete', 'repair_order.cancel', 'repair_order.parts.add',
-    'customer.view', 'customer.manage', 'parts.view', 'parts.manage',
-    'invoice.view', 'invoice.create', 'payment.record', 'technician.view',
-    'technician.manage', 'user.manage', 'dashboard.view', 'record.delete',
-  ],
-};
-const can = (perm) => ROLE_PERMISSIONS[currentUser.role]?.includes(perm);
+const can = (perm) => currentUser.permissions?.includes(perm) ?? false;
 
 const NAV = {
   admin: {
@@ -56,18 +25,7 @@ const NAV = {
       ['orders', 'bi-clipboard2-check', 'Repair Orders'],
       ['customers', 'bi-people', 'Customers'],
       ['technicians', 'bi-person-badge', 'Technicians'],
-    ],
-    Operations: [
-      ['inventory', 'bi-box-seam', 'Inventory'],
-      ['invoices', 'bi-receipt', 'Invoices'],
-    ],
-  },
-  manager: {
-    Management: [
-      ['dashboard', 'bi-grid-1x2-fill', 'Dashboard'],
-      ['orders', 'bi-clipboard2-check', 'Repair Orders'],
-      ['customers', 'bi-people', 'Customers'],
-      ['technicians', 'bi-person-badge', 'Technicians'],
+      ['settings', 'bi-gear', 'Settings'],
     ],
     Operations: [
       ['inventory', 'bi-box-seam', 'Inventory'],
@@ -78,24 +36,8 @@ const NAV = {
     Work: [
       ['dashboard', 'bi-grid-1x2-fill', 'Dashboard'],
       ['orders', 'bi-clipboard2-check', 'My Work Orders'],
+      ['pricelist', 'bi-tags', 'Price List'],
       ['inventory', 'bi-box-seam', 'Parts Catalog'],
-    ],
-  },
-  front_desk: {
-    'Front Desk': [
-      ['dashboard', 'bi-grid-1x2-fill', 'Dashboard'],
-      ['orders', 'bi-clipboard2-check', 'Repair Orders'],
-      ['customers', 'bi-people', 'Customers'],
-      ['invoices', 'bi-receipt', 'Invoices'],
-    ],
-    Reference: [
-      ['inventory', 'bi-box-seam', 'Parts Catalog'],
-    ],
-  },
-  parts_staff: {
-    Inventory: [
-      ['dashboard', 'bi-grid-1x2-fill', 'Dashboard'],
-      ['inventory', 'bi-box-seam', 'Parts Inventory'],
     ],
   },
 };
@@ -104,31 +46,91 @@ const ALL_STATUSES = ['requested', 'diagnosed', 'approved', 'in_progress', 'on_h
 const TECH_STATUSES = ['requested', 'diagnosed', 'approved', 'in_progress', 'on_hold', 'completed'];
 
 // ---------- Helpers ----------
-const peso = (n) => `₱${Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
-const dateFmt = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-const STATUS_BADGE = {
-  requested: 'grey', diagnosed: 'blue', approved: 'amber',
-  in_progress: 'amber', on_hold: 'amber', completed: 'green',
-  invoiced: 'blue', closed: 'green', cancelled: 'rose', rejected: 'rose',
-};
-const PRIORITY_BADGE = { low: 'grey', normal: 'grey', high: 'amber', urgent: 'rose' };
-const INVOICE_BADGE = { unpaid: 'rose', partially_paid: 'amber', paid: 'green', void: 'grey' };
-const TECH_BADGE = { active: 'green', inactive: 'grey' };
-
-const label = (s) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-
-function badge(kind, text) {
-  return `<span class="badge badge-${kind}"><span class="bdot"></span>${text}</span>`;
-}
-
-function initials(name) {
-  return name.split(/[\s_.-]+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
-}
-
 function debounce(fn, ms = 300) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function createCombobox({ input, list, getEntries, onSelect, onAddNew, debounceMs = 150 }) {
+  let entries = [];
+  let activeIndex = -1;
+  let openToken = 0;
+
+  function render() {
+    const items = entries.map((e, i) => {
+      const cls = `combobox-item ${e.kind === 'addnew' ? 'combobox-addnew' : ''} ${i === activeIndex ? 'active' : ''}`.trim();
+      const sub = e.sub ? `<small>${esc(e.sub)}</small>` : '';
+      return `<li class="${cls}" data-index="${i}"><span>${esc(e.label)}</span>${sub}</li>`;
+    }).join('');
+    list.innerHTML = items || '<li class="combobox-empty">No matches</li>';
+  }
+
+  async function open() {
+    const q = input.value.trim();
+    const token = ++openToken;
+    entries = (await getEntries(q)) || [];
+    if (token !== openToken) return;
+    activeIndex = entries.length ? 0 : -1;
+    list.classList.add('open');
+    render();
+  }
+
+  function close() {
+    openToken++;
+    list.classList.remove('open');
+    list.innerHTML = '';
+  }
+
+  function choose(i) {
+    const e = entries[i];
+    if (!e) return;
+    close();
+    input.dataset.selected = '1';
+    if (e.kind === 'addnew') { if (onAddNew) onAddNew(e); return; }
+    input.value = e.label;
+    if (onSelect) onSelect(e);
+  }
+
+  const debouncedOpen = debounce(() => { if (document.activeElement === input) open(); }, debounceMs);
+  input.addEventListener('input', () => {
+    if (!input.value.trim()) { input.dataset.selected = ''; close(); if (onSelect) onSelect(null); return; }
+    input.dataset.selected = '';
+    debouncedOpen();
+  });
+  input.addEventListener('focus', () => { if (input.value.trim()) open(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' && list.classList.contains('open')) {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, entries.length - 1);
+      render();
+    } else if (e.key === 'ArrowUp' && list.classList.contains('open')) {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, 0);
+      render();
+    } else if (e.key === 'Enter' && list.classList.contains('open') && activeIndex >= 0) {
+      e.preventDefault();
+      choose(activeIndex);
+    } else if (e.key === 'Escape' && list.classList.contains('open')) {
+      e.preventDefault();
+      close();
+    }
+  });
+  input.addEventListener('blur', () => setTimeout(close, 120));
+  list.addEventListener('mousedown', (e) => {
+    const li = e.target.closest('[data-index]');
+    if (!li) return;
+    e.preventDefault();
+    choose(Number(li.dataset.index));
+  });
+
+  return {
+    reset() {
+      input.value = '';
+      input.dataset.selected = '';
+      close();
+    },
+    close,
+  };
 }
 
 // ---------- Sidebar (role-based) ----------
@@ -143,10 +145,10 @@ function buildNav() {
   `).join('');
   document.getElementById('main-nav').innerHTML = sections;
 
-  document.getElementById('sidebar-avatar').textContent = initials(currentUser.full_name || currentUser.username);
-  document.getElementById('sidebar-name').textContent = currentUser.full_name || currentUser.username;
-  document.getElementById('sidebar-role').textContent = ROLE_LABEL[currentUser.role];
   document.getElementById('topbar-avatar').textContent = initials(currentUser.full_name || currentUser.username);
+  document.getElementById('user-menu-avatar').textContent = initials(currentUser.full_name || currentUser.username);
+  document.getElementById('user-menu-name').textContent = currentUser.full_name || currentUser.username;
+  document.getElementById('user-menu-role').textContent = ROLE_LABEL[currentUser.role] || currentUser.role;
 
   const MODAL_PERM = {
     'modal-order': 'repair_order.create',
@@ -159,13 +161,90 @@ function buildNav() {
   });
 }
 
-document.getElementById('logout-btn').addEventListener('click', redirectToLogin);
+// ---------- Topbar user menu ----------
+const userMenuBtn = document.getElementById('topbar-avatar');
+const userMenuPop = document.getElementById('user-menu-pop');
+userMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = !userMenuPop.hidden;
+  userMenuPop.hidden = open;
+  userMenuBtn.setAttribute('aria-expanded', String(!open));
+});
+userMenuBtn.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); userMenuBtn.click(); }
+});
+document.addEventListener('click', () => {
+  userMenuPop.hidden = true;
+  userMenuBtn.setAttribute('aria-expanded', 'false');
+});
+document.getElementById('user-menu-logout').addEventListener('click', redirectToLogin);
+
+// ---------- Notifications ----------
+const bellBtn = document.getElementById('bell-btn');
+const bellDot = document.getElementById('bell-dot');
+const notifPanel = document.getElementById('notif-panel');
+const notifList = document.getElementById('notif-list');
+
+async function loadNotifications() {
+  if (!can('repair_order.view') && !can('repair_order.view.all')) return;
+  const orders = await api.orders.list();
+  const recent = orders
+    .filter((o) => !['cancelled', 'rejected'].includes(o.status))
+    .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+    .slice(0, 8);
+
+  if (!recent.length) {
+    notifList.innerHTML = '<div class="notif-empty">No recent activity.</div>';
+    bellDot.classList.add('hidden');
+    return;
+  }
+
+  const openCount = orders.filter((o) => ['requested', 'diagnosed', 'approved', 'in_progress', 'on_hold'].includes(o.status)).length;
+  bellDot.classList.toggle('hidden', openCount === 0);
+
+  notifList.innerHTML = recent.map((o) => {
+    const isUrgent = o.priority === 'urgent' || o.priority === 'high';
+    const bgColor = isUrgent ? 'var(--rose-50)' : 'var(--blue-50)';
+    const fgColor = isUrgent ? 'var(--rose-600)' : 'var(--blue-600)';
+    const icon = ['completed', 'invoiced', 'closed'].includes(o.status) ? 'bi-check2-circle' : 'bi-clipboard2-check';
+    return `
+      <div class="notif-item" data-order-id="${o.id}">
+        <div class="notif-icon" style="background:${bgColor}; color:${fgColor};"><i class="bi ${icon}"></i></div>
+        <div>
+          <div class="notif-text"><strong>${o.ro_number}</strong> — ${o.item?.description ?? 'Repair order'}</div>
+          <div class="notif-time">${o.customer?.full_name ?? ''} · ${label(o.status)}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+bellBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = !notifPanel.hidden;
+  notifPanel.hidden = open;
+  if (!open) loadNotifications();
+});
+document.addEventListener('click', (e) => {
+  if (!notifPanel.contains(e.target) && e.target !== bellBtn) notifPanel.hidden = true;
+});
+notifList.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-order-id]');
+  if (item) {
+    notifPanel.hidden = true;
+    openOrderDetail(Number(item.dataset.orderId));
+  }
+});
 
 // ---------- Change password ----------
-document.getElementById('change-pw-btn').addEventListener('click', () => {
+function openChangePassword() {
   document.getElementById('form-password').reset();
   document.getElementById('password-error').hidden = true;
   openModal('modal-password');
+}
+document.getElementById('user-menu-changepw').addEventListener('click', () => {
+  userMenuPop.hidden = true;
+  userMenuBtn.setAttribute('aria-expanded', 'false');
+  openChangePassword();
 });
 document.getElementById('change-pw-submit').addEventListener('click', async () => {
   const form = document.getElementById('form-password');
@@ -184,7 +263,7 @@ document.getElementById('change-pw-submit').addEventListener('click', async () =
     });
     closeModal('modal-password');
     form.reset();
-    alert('Password updated successfully.');
+    showToast('Password updated successfully.');
   } catch (err) {
     errBox.textContent = err.message;
     errBox.hidden = false;
@@ -211,6 +290,8 @@ function loadPage(page) {
     technicians: renderTechnicians,
     inventory: renderParts,
     invoices: renderInvoices,
+    settings: renderSettings,
+    pricelist: renderPriceList,
   };
   loaders[page]?.();
 }
@@ -265,6 +346,16 @@ document.querySelectorAll('[data-submit-form]').forEach((btn) => {
 
     try {
       if (formId === 'form-order') {
+        if (!data.customer_id) {
+          alert('Please select a customer (or add a new one) before saving.');
+          document.getElementById('order-customer-input').focus();
+          return;
+        }
+        if (!data.item_id) {
+          alert('Please select an item (or add a new one) before saving.');
+          document.getElementById('order-item-input').focus();
+          return;
+        }
         let itemId = Number(data.item_id);
         if (data.item_id === 'new') {
           const item = await api.items.create({
@@ -278,19 +369,31 @@ document.querySelectorAll('[data-submit-form]').forEach((btn) => {
         await api.orders.create({
           customer_id: Number(data.customer_id),
           item_id: itemId,
-          technician_id: data.technician_id ? Number(data.technician_id) : null,
+          technician_id: data.technician_id ? Number(data.technician_id)
+            : currentUser.role === 'technician' ? currentUser.technician_id : null,
           problem_description: data.problem_description || null,
           priority: data.priority,
         });
         closeModal('modal-order'); form.reset(); loadPage('orders');
+        showToast('Repair order created.');
       } else if (formId === 'form-customer') {
+        let created = null;
+        const wasEditing = !!editingCustomerId;
         if (editingCustomerId) {
           await api.customers.update(editingCustomerId, data);
           editingCustomerId = null;
         } else {
-          await api.customers.create(data);
+          created = await api.customers.create(data);
         }
-        closeModal('modal-customer'); form.reset(); loadPage('customers');
+        closeModal('modal-customer');
+        form.reset();
+        if (quickAddFromOrder) {
+          quickAddFromOrder = false;
+          if (created) selectCustomerInOrderForm(created);
+          return;
+        }
+        loadPage('customers');
+        showToast(wasEditing ? 'Customer updated.' : 'Customer created.');
       } else if (formId === 'form-technician') {
         let technician;
         if (editingTechnicianId) {
@@ -298,9 +401,10 @@ document.querySelectorAll('[data-submit-form]').forEach((btn) => {
           editingTechnicianId = null;
         } else {
           technician = await api.technicians.create(data);
-          alert(`Technician created. Login account:\nUsername: ${technician.username}\nPassword: ${data.password || 'tech123'}`);
+          showToast(`Technician created. Login: ${technician.username} / ${data.password || 'tech123'}`, 'info');
         }
         closeModal('modal-technician'); form.reset(); loadPage('technicians');
+        if (editingTechnicianId) showToast('Technician updated.');
       } else if (formId === 'form-part') {
         const partData = {
           sku: data.sku,
@@ -310,6 +414,7 @@ document.querySelectorAll('[data-submit-form]').forEach((btn) => {
           unit_cost: Number(data.unit_cost || 0),
           unit_price: Number(data.unit_price || 0),
         };
+        const wasEditingPart = !!editingPartId;
         if (editingPartId) {
           await api.parts.update(editingPartId, partData);
           editingPartId = null;
@@ -317,23 +422,18 @@ document.querySelectorAll('[data-submit-form]').forEach((btn) => {
           await api.parts.create(partData);
         }
         closeModal('modal-part'); form.reset(); loadPage('inventory');
+        showToast(wasEditingPart ? 'Part updated.' : 'Part created.');
       }
     } catch (err) {
-      alert('Save failed: ' + err.message);
+      showToast(err.message, 'error');
     }
   });
 });
 
 async function populateOrderModal() {
-  const [customers, parts_items] = await Promise.all([api.customers.list(), api.items.list()]);
-
-  const custSel = document.getElementById('order-customer-select');
-  custSel.innerHTML = customers.map((c) => `<option value="${c.id}">${c.full_name}</option>`).join('');
-
-  const itemSel = document.getElementById('order-item-select');
-  itemSel.innerHTML = '<option value="new">+ New item…</option>' +
-    parts_items.map((i) => `<option value="${i.id}">${i.description}${i.identifier ? ' — ' + i.identifier : ''}</option>`).join('');
-  if (parts_items.length) itemSel.value = String(parts_items[0].id);
+  const [customers, items] = await Promise.all([api.customers.list(), api.items.list()]);
+  orderCustomers = customers;
+  orderItems = items;
 
   const newItemFields = document.getElementById('order-new-item-fields');
   newItemFields.hidden = true;
@@ -341,11 +441,10 @@ async function populateOrderModal() {
   document.getElementById('new-item-description').value = '';
   document.getElementById('new-item-identifier').value = '';
   document.getElementById('new-item-type').value = '';
-  itemSel.addEventListener('change', () => {
-    const isNew = itemSel.value === 'new';
-    newItemFields.hidden = !isNew;
-    document.getElementById('new-item-description').required = isNew;
-  });
+  document.getElementById('order-customer-id').value = '';
+  document.getElementById('order-item-id').value = '';
+  customerCombobox.reset();
+  itemCombobox.reset();
 
   const techField = document.getElementById('order-technician-field');
   const techSel = document.getElementById('order-technician-select');
@@ -360,6 +459,81 @@ async function populateOrderModal() {
   }
 }
 
+function selectCustomerInOrderForm(c) {
+  orderCustomers.unshift(c);
+  const input = document.getElementById('order-customer-input');
+  const id = document.getElementById('order-customer-id');
+  input.value = c.full_name;
+  input.dataset.selected = '1';
+  id.value = String(c.id);
+}
+
+function openCustomerQuickAdd(name) {
+  quickAddFromOrder = true;
+  const form = document.getElementById('form-customer');
+  editingCustomerId = null;
+  form.reset();
+  form.full_name.value = name;
+  document.querySelector('#modal-customer .modal-title').textContent = 'New Customer';
+  document.querySelector('#modal-customer [data-submit-form]').textContent = 'Save Customer';
+  openModal('modal-customer');
+  form.full_name.focus();
+}
+
+function initOrderComboboxes() {
+  customerCombobox = createCombobox({
+    input: document.getElementById('order-customer-input'),
+    list: document.getElementById('order-customer-list'),
+    getEntries: async (q) => {
+      const rows = q ? await api.customers.list(q) : orderCustomers;
+      const entries = rows.map((c) => ({
+        kind: 'option',
+        value: c.id,
+        label: c.full_name,
+        sub: [c.phone, c.email].filter(Boolean).join(' · '),
+      }));
+      if (q.trim()) entries.push({ kind: 'addnew', name: q.trim(), label: `+ Add "${q.trim()}" as new customer` });
+      return entries;
+    },
+    onSelect: (e) => { document.getElementById('order-customer-id').value = e ? String(e.value) : ''; },
+    onAddNew: (e) => openCustomerQuickAdd(e.name),
+  });
+
+  itemCombobox = createCombobox({
+    input: document.getElementById('order-item-input'),
+    list: document.getElementById('order-item-list'),
+    getEntries: (q) => {
+      const t = q.trim().toLowerCase();
+      const matches = orderItems.filter((i) => !t
+        || (i.description || '').toLowerCase().includes(t)
+        || (i.identifier || '').toLowerCase().includes(t));
+      const entries = matches.map((i) => ({
+        kind: 'option',
+        value: i.id,
+        label: i.description || 'Untitled item',
+        sub: i.identifier || (i.item_type ? label(i.item_type) : ''),
+      }));
+      entries.push({ kind: 'addnew', label: '+ New item…' });
+      return entries;
+    },
+    onSelect: (e) => {
+      const newItemFields = document.getElementById('order-new-item-fields');
+      document.getElementById('new-item-description').required = false;
+      newItemFields.hidden = true;
+      if (e) document.getElementById('order-item-id').value = String(e.value);
+    },
+    onAddNew: () => {
+      const input = document.getElementById('order-item-input');
+      if (!input.value.trim()) input.value = '+ New item…';
+      document.getElementById('order-item-id').value = 'new';
+      const newItemFields = document.getElementById('order-new-item-fields');
+      document.getElementById('new-item-description').required = true;
+      newItemFields.hidden = false;
+      document.getElementById('new-item-description').focus();
+    },
+  });
+}
+
 // ---------- Dashboard ----------
 async function renderDashboard() {
   const role = currentUser.role;
@@ -367,6 +541,11 @@ async function renderDashboard() {
   const orders = canViewOrders ? await api.orders.list() : [];
   const openOrders = orders.filter((o) => !['completed', 'invoiced', 'closed', 'cancelled', 'rejected'].includes(o.status));
   const byStatus = orders.reduce((acc, o) => { acc[o.status] = (acc[o.status] || 0) + 1; return acc; }, {});
+
+  if (role === 'technician') {
+    await renderTechnicianDashboard(orders, byStatus, openOrders);
+    return;
+  }
 
   let kpis;
   if (can('repair_order.view.all')) {
@@ -426,24 +605,6 @@ async function renderDashboard() {
   }
   document.getElementById('dashboard-kpis').innerHTML = kpis;
 
-  if (role === 'parts_staff') {
-    const parts = await api.parts.list();
-    const low = parts.filter((p) => p.qty_on_hand <= p.reorder_threshold).sort((a, b) => a.qty_on_hand - b.qty_on_hand);
-    document.getElementById('dashboard-status-breakdown').innerHTML =
-      low.map((p) => `
-        <div class="status-list-item">
-          <div class="status-row">
-            <span><i class="bi bi-circle-fill" style="color:var(--rose-600); font-size:8px;"></i> ${p.name}</span>
-            <span class="cell-sub">${p.qty_on_hand} left (${p.reorder_threshold} threshold)</span>
-          </div>
-          <div class="progress-track"><div class="progress-fill" style="width:${Math.min(100, Math.round((p.qty_on_hand / (p.reorder_threshold || 1)) * 100))}%; background:var(--rose-600);"></div></div>
-        </div>`).join('')
-      || '<div class="status-list-item cell-sub">All parts in stock.</div>';
-    document.getElementById('dashboard-activity').innerHTML =
-      '<div class="activity-item cell-sub">Order data is not available to the Parts Staff role.</div>';
-    return;
-  }
-
   const statuses = Object.entries(byStatus);
   const total = statuses.reduce((sum, [, n]) => sum + n, 0) || 1;
   document.getElementById('dashboard-status-breakdown').innerHTML = statuses.map(([status, count]) => `
@@ -465,6 +626,98 @@ async function renderDashboard() {
       </div>
     </div>
   `).join('') || '<div class="activity-item cell-sub">No recent activity.</div>';
+}
+
+async function renderTechnicianDashboard(orders, byStatus, openOrders) {
+  const [parts, settings] = await Promise.all([
+    api.parts.list(),
+    api.settings.get().catch(() => null),
+  ]);
+  const low = parts.filter((p) => p.qty_on_hand <= (p.reorder_threshold || settings?.low_stock_threshold || 5)).sort((a, b) => a.qty_on_hand - b.qty_on_hand);
+  const awaitingDiagnosis = orders.filter((o) => ['requested', 'diagnosed'].includes(o.status)).length;
+
+  const now = Date.now();
+  const OVERDUE_HOURS = {
+    urgent: settings?.overdue_urgent_hours ?? 4,
+    high: settings?.overdue_high_hours ?? 24,
+    normal: settings?.overdue_normal_hours ?? 72,
+    low: settings?.overdue_low_hours ?? 168,
+  };
+  const overdueOrders = openOrders.filter((o) => {
+    const ageMs = now - new Date(o.created_at).getTime();
+    const ageH = ageMs / (1000 * 60 * 60);
+    return ageH > (OVERDUE_HOURS[o.priority] || 72);
+  });
+
+  document.querySelector('#page-dashboard .page-title').textContent = 'Technician Dashboard';
+  document.querySelector('#page-dashboard .page-sub').textContent = 'Your assigned jobs and the parts you need, at a glance.';
+
+  document.getElementById('dashboard-kpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon" style="background:var(--blue-50); color:var(--blue-600);"><i class="bi bi-clipboard2-pulse"></i></div>
+      </div>
+      <div class="kpi-label">My Open Jobs</div>
+      <div class="kpi-value">${openOrders.length}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon" style="background:var(--amber-50); color:var(--amber-600);"><i class="bi bi-search"></i></div>
+      </div>
+      <div class="kpi-label">Awaiting Diagnosis</div>
+      <div class="kpi-value">${awaitingDiagnosis}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon" style="background:${overdueOrders.length > 0 ? 'var(--rose-50)' : 'var(--slate-800)'}; color:${overdueOrders.length > 0 ? 'var(--rose-600)' : '#fff'};"><i class="bi bi-${overdueOrders.length > 0 ? 'exclamation-triangle' : 'hourglass-split'}"></i></div>
+      </div>
+      <div class="kpi-label">Overdue</div>
+      <div class="kpi-value">${overdueOrders.length}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon" style="background:var(--rose-50); color:var(--rose-600);"><i class="bi bi-box-seam"></i></div>
+      </div>
+      <div class="kpi-label">Low Stock Parts</div>
+      <div class="kpi-value">${low.length}</div>
+    </div>`;
+
+  document.getElementById('dashboard-panel-title').textContent = 'My Repair Orders';
+  document.getElementById('dashboard-panel-link').textContent = 'Open My Work Orders';
+  document.getElementById('dashboard-status-breakdown').innerHTML = orders.slice(0, 8).map((o) => {
+    const ageMs = now - new Date(o.created_at).getTime();
+    const ageH = ageMs / (1000 * 60 * 60);
+    const isOverdue = ageH > (OVERDUE_HOURS[o.priority] || 72) && !['completed', 'invoiced', 'closed', 'cancelled', 'rejected'].includes(o.status);
+    const ageText = ageH < 24 ? `${Math.round(ageH)}h` : `${Math.round(ageH / 24)}d`;
+    return `
+    <div class="tech-job-row" data-tech-order="${o.id}">
+      <div class="tech-job-top">
+        <b>${o.ro_number}</b>
+        ${badge(PRIORITY_BADGE[o.priority], label(o.priority))}
+        ${isOverdue ? `<span class="badge badge-rose"><span class="bdot"></span>OVERDUE ${ageText}</span>` : `<span class="cell-sub" style="margin-left:auto;">${ageText}</span>`}
+      </div>
+      <div class="tech-job-item">${o.item?.description ?? '—'}${o.item?.identifier ? ` <span class="cell-sub">· ${o.item.identifier}</span>` : ''}</div>
+      <div class="cell-sub">${o.customer?.full_name ?? '—'} · ${badge(STATUS_BADGE[o.status], label(o.status))}</div>
+    </div>`;
+  }).join('') || '<div class="status-list-item cell-sub">No jobs assigned to you yet.</div>';
+
+  document.querySelectorAll('#dashboard-status-breakdown [data-tech-order]').forEach((row) => {
+    row.addEventListener('click', () => openOrderDetail(Number(row.dataset.techOrder)));
+  });
+
+  document.getElementById('dashboard-panel-title-2').textContent = 'Parts Inventory';
+  document.getElementById('dashboard-activity').innerHTML = parts.slice(0, 8).map((p) => {
+    const isLow = p.qty_on_hand <= p.reorder_threshold;
+    const pct = Math.min(100, Math.round((p.qty_on_hand / (p.reorder_threshold || 1)) * 100));
+    return `
+      <div class="status-list-item">
+        <div class="status-row">
+          <span>${p.name}${isLow ? ` <span class="badge badge-rose"><span class="bdot"></span>LOW</span>` : ''}</span>
+          <span class="cell-sub">${p.qty_on_hand} in stock${isLow ? ` · reorder at ${p.reorder_threshold}` : ''}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%; ${isLow ? 'background:var(--rose-600);' : 'background:var(--emerald-600);'}"></div></div>
+      </div>`;
+  }).join('') || '<div class="status-list-item cell-sub">No parts in the catalog.</div>';
 }
 
 // ---------- Repair Orders ----------
@@ -512,8 +765,9 @@ async function renderOrders() {
     sel.addEventListener('change', async () => {
       try {
         await api.orders.update(Number(sel.dataset.orderId), { status: sel.value });
+        showToast('Status updated.');
       } catch (err) {
-        alert('Update failed: ' + err.message);
+        showToast(err.message, 'error');
         renderOrders();
       }
     });
@@ -529,6 +783,11 @@ let editingCustomerId = null;
 let editingTechnicianId = null;
 let editingPartId = null;
 let lastCustomers = [];
+let orderCustomers = [];
+let orderItems = [];
+let quickAddFromOrder = false;
+let customerCombobox = null;
+let itemCombobox = null;
 let lastTechnicians = [];
 let lastParts = [];
 
@@ -536,11 +795,6 @@ async function openOrderDetail(id) {
   activeOrderId = id;
   const role = currentUser.role;
   const order = await api.orders.get(id);
-  let invoice = null;
-  if (can('invoice.view')) {
-    const invoices = await api.invoices.list({ repair_order_id: id });
-    invoice = invoices[0] || null;
-  }
 
   document.getElementById('order-detail-title').textContent = `Repair Order ${order.ro_number}`;
   document.getElementById('order-detail-badge').innerHTML = badge(STATUS_BADGE[order.status], label(order.status));
@@ -590,7 +844,7 @@ async function openOrderDetail(id) {
   statusSel.disabled = !(role === 'technician' || can('repair_order.approve'));
 
   await renderOrderParts(order);
-  await renderOrderInvoice(order, invoice);
+  await renderOrderInvoice(order);
   renderOrderHistory(order);
   openModal('modal-order-detail');
 }
@@ -644,7 +898,8 @@ async function renderOrderParts(order) {
       try {
         await api.orders.removePart(order.id, Number(btn.dataset.removeLine));
         await refreshOrderDetail();
-      } catch (err) { alert('Remove failed: ' + err.message); }
+        showToast('Part removed.');
+      } catch (err) { showToast(err.message, 'error'); }
     });
   });
 }
@@ -657,19 +912,25 @@ document.getElementById('od-part-add').addEventListener('click', async () => {
     await api.orders.addPart(activeOrderId, { part_id: Number(partId), quantity: qty });
     document.getElementById('od-part-qty').value = 1;
     await refreshOrderDetail();
-  } catch (err) { alert('Add part failed: ' + err.message); }
+    showToast('Part added to order.');
+  } catch (err) { showToast(err.message, 'error'); }
 });
 
-async function renderOrderInvoice(order, invoice) {
+async function renderOrderInvoice(order) {
   const container = document.getElementById('od-invoice');
+  if (!container) return;
 
   if (!can('invoice.view')) {
-    container.innerHTML = '<div class="cell-sub">Billing details are managed by the front desk and management.</div>';
+    container.innerHTML = '<div class="cell-sub">Invoicing is managed by the admin.</div>';
     return;
   }
 
+  let invoice = null;
+  const invoices = await api.invoices.list({ repair_order_id: order.id });
+  invoice = invoices[0] || null;
+
   if (!invoice) {
-    const canInvoice = ['completed'].includes(order.status);
+    const canInvoice = order.status === 'completed';
     container.innerHTML = `
       <div class="cell-sub">No invoice yet.</div>
       ${can('invoice.create') && canInvoice
@@ -686,7 +947,8 @@ async function renderOrderInvoice(order, invoice) {
             amount_paid: 0,
           });
           await refreshOrderDetail();
-        } catch (err) { alert('Invoice failed: ' + err.message); }
+          showToast('Invoice generated.');
+        } catch (err) { showToast(err.message, 'error'); }
       });
     }
     return;
@@ -730,7 +992,7 @@ async function renderOrderInvoice(order, invoice) {
   if (payBtn) {
     payBtn.addEventListener('click', async () => {
       const amount = Number(document.getElementById('od-pay-amount').value);
-      if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
+      if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
       try {
         await api.payments.create({
           invoice_id: invoice.id,
@@ -739,7 +1001,8 @@ async function renderOrderInvoice(order, invoice) {
           reference: document.getElementById('od-pay-ref').value || null,
         });
         await refreshOrderDetail();
-      } catch (err) { alert('Payment failed: ' + err.message); }
+        showToast('Payment recorded.');
+      } catch (err) { showToast(err.message, 'error'); }
     });
   }
 }
@@ -761,9 +1024,7 @@ document.getElementById('od-copy-link').addEventListener('click', async () => {
 document.getElementById('od-save').addEventListener('click', async () => {
   if (!activeOrderId) return;
   const payload = {};
-  if (currentUser.role !== 'front_desk') {
-    payload.status = document.getElementById('od-status').value;
-  }
+  payload.status = document.getElementById('od-status').value;
   if (can('repair_order.diagnose')) {
     payload.inspection_notes = document.getElementById('od-inspection').value;
     payload.diagnosis = document.getElementById('od-diagnosis').value;
@@ -782,7 +1043,8 @@ document.getElementById('od-save').addEventListener('click', async () => {
     await api.orders.update(activeOrderId, payload);
     loadPage('orders');
     await refreshOrderDetail();
-  } catch (err) { alert('Save failed: ' + err.message); }
+    showToast('Changes saved successfully.');
+  } catch (err) { showToast(err.message, 'error'); }
 });
 
 // ---------- Admin: kebab menus, edit & delete ----------
@@ -900,7 +1162,7 @@ async function deleteRecord(entity, id) {
     else if (entity === 'order') await api.orders.remove(id);
     loadPage(currentPage);
   } catch (err) {
-    alert('Delete failed: ' + err.message);
+    showToast(err.message, 'error');
   }
 }
 
@@ -912,7 +1174,7 @@ async function renderCustomers() {
   const canManage = can('customer.manage');
 
   document.getElementById('customers-table-body').innerHTML = customers.map((c) => `
-    <tr>
+    <tr data-customer-id="${c.id}" style="cursor:pointer;">
       <td><div class="avatar-tiny" style="display:inline-flex;margin-right:8px;">${initials(c.full_name)}</div><b>${c.full_name}</b></td>
       <td>${c.phone ?? '—'}</td>
       <td>${c.email ?? '—'}</td>
@@ -922,30 +1184,15 @@ async function renderCustomers() {
 
   document.getElementById('customers-count').textContent = `Showing ${customers.length} customer(s)`;
   if (canManage) wireKebabs();
+
+  document.querySelectorAll('[data-customer-id]').forEach((row) => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.kebab-wrap')) return;
+      openCustomerDetail(Number(row.dataset.customerId));
+    });
+  });
 }
 document.getElementById('customers-search').addEventListener('input', debounce(renderCustomers));
-
-// ---------- Technicians ----------
-async function renderTechnicians() {
-  const q = document.getElementById('technicians-search').value;
-  const technicians = await api.technicians.list(q);
-  lastTechnicians = technicians;
-  const canManage = can('technician.manage');
-
-  document.getElementById('technicians-table-body').innerHTML = technicians.map((t) => `
-    <tr>
-      <td><div class="avatar-tiny" style="display:inline-flex;margin-right:8px;">${initials(t.full_name)}</div><b>${t.full_name}</b></td>
-      <td>${t.email}</td>
-      <td>${t.specialty}</td>
-      <td>${badge(TECH_BADGE[t.status], label(t.status))}</td>
-      ${canManage ? `<td>${kebab(t.id, 'technician')}</td>` : ''}
-    </tr>
-  `).join('') || `<tr class="empty-row"><td colspan="${canManage ? 5 : 4}">No technicians found.</td></tr>`;
-
-  document.getElementById('technicians-count').textContent = `Showing ${technicians.length} technician(s)`;
-  if (canManage) wireKebabs();
-}
-document.getElementById('technicians-search').addEventListener('input', debounce(renderTechnicians));
 
 // ---------- Inventory ----------
 async function renderParts() {
@@ -977,7 +1224,7 @@ document.getElementById('parts-search').addEventListener('input', debounce(rende
 
 // ---------- Invoices ----------
 async function renderInvoices() {
-  const status = document.getElementById('invoices-status-filter').value;
+  const status = document.getElementById('invoices-status-filter')?.value || '';
   const invoices = await api.invoices.list(status ? { status } : {});
 
   document.getElementById('invoices-table-body').innerHTML = invoices.map((inv) => `
@@ -989,22 +1236,270 @@ async function renderInvoices() {
       <td>${dateFmt(inv.issued_at)}</td>
       <td>${inv.paid_at ? dateFmt(inv.paid_at) : '—'}</td>
       <td>${badge(INVOICE_BADGE[inv.status], label(inv.status))}</td>
+      <td>
+        <div class="kebab-wrap">
+          <button class="kebab-btn" aria-label="Actions"><i class="bi bi-three-dots-vertical"></i></button>
+          <div class="kebab-menu">
+            ${can('invoice.edit') && inv.status !== 'void' ? `<button class="kebab-item" data-invoice-action="edit" data-invoice-id="${inv.id}"><i class="bi bi-pencil"></i> Edit</button>` : ''}
+            ${can('invoice.void') && inv.status !== 'void' ? `<button class="kebab-item danger" data-invoice-action="void" data-invoice-id="${inv.id}"><i class="bi bi-x-circle"></i> Void</button>` : ''}
+            ${can('invoice.edit') ? `<button class="kebab-item danger" data-invoice-action="delete" data-invoice-id="${inv.id}"><i class="bi bi-trash"></i> Delete</button>` : ''}
+          </div>
+        </div>
+      </td>
     </tr>
-  `).join('') || `<tr class="empty-row"><td colspan="7">No invoices found.</td></tr>`;
+  `).join('') || `<tr class="empty-row"><td colspan="8">No invoices found.</td></tr>`;
 
   document.getElementById('invoices-count').textContent = `Showing ${invoices.length} invoice(s)`;
+
+  document.querySelectorAll('[data-invoice-action]').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.invoiceAction;
+      const id = Number(btn.dataset.invoiceId);
+      document.querySelectorAll('.kebab-menu.open').forEach((m) => m.classList.remove('open'));
+      if (action === 'edit') openEditInvoice(id, invoices);
+      else if (action === 'void') await voidInvoice(id);
+      else if (action === 'delete') await deleteInvoice(id);
+    });
+  });
+  wireKebabs();
 }
-document.getElementById('invoices-status-filter').addEventListener('change', renderInvoices);
+
+let lastInvoices = [];
+
+function openEditInvoice(id, invoices) {
+  const inv = invoices.find((x) => x.id === id);
+  if (!inv) return;
+  document.getElementById('inv-edit-id').value = id;
+  document.getElementById('inv-edit-total').value = inv.total;
+  document.getElementById('inv-edit-status').value = inv.status;
+  openModal('modal-invoice-edit');
+}
+
+async function voidInvoice(id) {
+  if (!confirm('Void this invoice? This cannot be undone.')) return;
+  try {
+    await api.invoices.void(id);
+    loadPage('invoices');
+    showToast('Invoice voided.');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteInvoice(id) {
+  if (!confirm('Delete this invoice? This cannot be undone.')) return;
+  try {
+    await api.invoices.remove(id);
+    loadPage('invoices');
+    showToast('Invoice deleted.');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+document.getElementById('invoices-status-filter')?.addEventListener('change', renderInvoices);
+
+// ---------- Customer Detail (drill-down) ----------
+async function openCustomerDetail(id) {
+  const c = lastCustomers.find((x) => x.id === id);
+  if (!c) return;
+  document.getElementById('cust-detail-name').textContent = c.full_name;
+  document.getElementById('cust-detail-phone').textContent = c.phone ?? '—';
+  document.getElementById('cust-detail-email').textContent = c.email ?? '—';
+  document.getElementById('cust-detail-address').textContent = c.address ?? '—';
+  document.getElementById('cust-detail-created').textContent = dateFmt(c.created_at);
+
+  const orders = await api.customers.orders(id);
+  document.getElementById('cust-detail-orders-body').innerHTML = orders.map((o) => `
+    <tr>
+      <td><b>${o.ro_number}</b></td>
+      <td>${o.item_description ?? '—'}${o.item_identifier ? `<div class="cell-sub">${o.item_identifier}</div>` : ''}</td>
+      <td>${o.technician_name ?? '—'}</td>
+      <td>${badge(STATUS_BADGE[o.status], label(o.status))}</td>
+      <td>${badge(PRIORITY_BADGE[o.priority], label(o.priority))}</td>
+      <td>${dateFmt(o.created_at)}</td>
+    </tr>
+  `).join('') || '<tr class="empty-row"><td colspan="6">No repair orders for this customer.</td></tr>';
+
+  document.getElementById('cust-detail-orders-count').textContent = `${orders.length} order(s)`;
+  openModal('modal-customer-detail');
+}
+
+// ---------- Technicians (with workload) ----------
+async function renderTechnicians() {
+  const q = document.getElementById('technicians-search').value;
+  const [technicians, workload] = await Promise.all([
+    api.technicians.list(q),
+    can('technician.view') ? api.technicians.workload() : Promise.resolve([]),
+  ]);
+  lastTechnicians = technicians;
+  const canManage = can('technician.manage');
+  const workloadMap = {};
+  workload.forEach((w) => { workloadMap[w.id] = w; });
+
+  document.getElementById('technicians-table-body').innerHTML = technicians.map((t) => {
+    const w = workloadMap[t.id] || {};
+    return `
+    <tr>
+      <td><div class="avatar-tiny" style="display:inline-flex;margin-right:8px;">${initials(t.full_name)}</div><b>${t.full_name}</b></td>
+      <td>${t.email}</td>
+      <td>${t.specialty}</td>
+      <td>${badge(TECH_BADGE[t.status], label(t.status))}</td>
+      <td class="cell-sub" style="text-align:center;">${w.open_orders ?? 0} / ${w.total_orders ?? 0}</td>
+      ${canManage ? `<td>${kebab(t.id, 'technician')}</td>` : ''}
+    </tr>`;
+  }).join('') || `<tr class="empty-row"><td colspan="${canManage ? 6 : 5}">No technicians found.</td></tr>`;
+
+  document.getElementById('technicians-count').textContent = `Showing ${technicians.length} technician(s)`;
+  if (canManage) wireKebabs();
+}
+
+// ---------- Price List ----------
+async function renderPriceList() {
+  const s = await api.settings.get().catch(() => null);
+  const cur = s?.currency_symbol || '₱';
+  const container = document.getElementById('pricelist-content');
+  if (!s) {
+    container.innerHTML = '<div class="cell-sub">Unable to load price list.</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div class="detail-grid" style="margin-bottom:24px;">
+      <div class="detail-item" style="padding:20px; background:var(--blue-50); border-radius:12px;">
+        <div class="detail-label">Diagnostic Fee</div>
+        <div class="detail-value" style="font-size:24px; color:var(--blue-600);">${cur}${Number(s.diagnostic_fee || 0).toLocaleString()}</div>
+        <div class="cell-sub">Charged for initial inspection/diagnosis</div>
+      </div>
+      <div class="detail-item" style="padding:20px; background:var(--emerald-50); border-radius:12px;">
+        <div class="detail-label">Standard Labor Rate</div>
+        <div class="detail-value" style="font-size:24px; color:var(--emerald-600);">${cur}${Number(s.labor_rate || 0).toLocaleString()}</div>
+        <div class="cell-sub">Per-hour labor charge</div>
+      </div>
+    </div>
+    <div class="detail-section" style="background:var(--gray-50); border-radius:12px; padding:20px;">
+      <div class="detail-section-title">Additional Info</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div><div class="detail-label">Default Warranty</div><div class="detail-value">${s.default_warranty_days ?? 30} days</div></div>
+        <div><div class="detail-label">Currency</div><div class="detail-value">${cur}</div></div>
+      </div>
+    </div>`;
+}
+
+// ---------- Settings ----------
+async function renderSettings() {
+  if (!can('settings.view')) {
+    document.getElementById('settings-content').innerHTML = '<div class="cell-sub">You do not have permission to view settings.</div>';
+    return;
+  }
+  const s = await api.settings.get();
+
+  // Shop profile
+  const form = document.getElementById('form-settings');
+  form.shop_name.value = s.shop_name ?? '';
+  form.address.value = s.address ?? '';
+  form.phone.value = s.phone ?? '';
+  form.email.value = s.email ?? '';
+  form.hours.value = s.hours ?? '';
+
+  // Account info
+  document.getElementById('settings-username').textContent = currentUser.username ?? '—';
+  document.getElementById('settings-role').textContent = label(currentUser.role);
+
+  // Business rules (admin only)
+  const bizPanel = document.getElementById('settings-business');
+  if (can('settings.manage')) {
+    bizPanel.hidden = false;
+    const bForm = document.getElementById('form-business-rules');
+    bForm.default_warranty_days.value = s.default_warranty_days ?? 30;
+    bForm.currency_symbol.value = s.currency_symbol ?? '₱';
+    bForm.low_stock_threshold.value = s.low_stock_threshold ?? 5;
+    bForm.overdue_urgent_hours.value = s.overdue_urgent_hours ?? 4;
+    bForm.overdue_high_hours.value = s.overdue_high_hours ?? 24;
+    bForm.overdue_normal_hours.value = s.overdue_normal_hours ?? 72;
+    bForm.overdue_low_hours.value = s.overdue_low_hours ?? 168;
+    bForm.diagnostic_fee.value = s.diagnostic_fee ?? 500;
+    bForm.labor_rate.value = s.labor_rate ?? 750;
+  } else {
+    bizPanel.hidden = true;
+  }
+}
+
+// Shop profile save
+document.getElementById('settings-save')?.addEventListener('click', async () => {
+  const form = document.getElementById('form-settings');
+  const data = Object.fromEntries(new FormData(form).entries());
+  try {
+    await api.settings.update(data);
+    showToast('Profile saved successfully.');
+  } catch (err) { showToast(err.message, 'error'); }
+});
+
+// Password change
+document.getElementById('settings-pw-save')?.addEventListener('click', async () => {
+  const form = document.getElementById('form-change-pw-settings');
+  if (!form.reportValidity()) return;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const errBox = document.getElementById('settings-pw-error');
+  errBox.hidden = true;
+  if (data.new_password !== document.getElementById('settings-confirm-pw').value) {
+    errBox.textContent = 'New passwords do not match.';
+    errBox.hidden = false;
+    return;
+  }
+  try {
+    await api.auth.changePassword({
+      current_password: data.current_password,
+      new_password: data.new_password,
+    });
+    form.reset();
+    showToast('Password updated successfully.');
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.hidden = false;
+  }
+});
+
+// Business rules save
+document.getElementById('settings-business-save')?.addEventListener('click', async () => {
+  const form = document.getElementById('form-business-rules');
+  const raw = Object.fromEntries(new FormData(form).entries());
+  const data = {
+    default_warranty_days: Number(raw.default_warranty_days) || 30,
+    currency_symbol: raw.currency_symbol || '₱',
+    low_stock_threshold: Number(raw.low_stock_threshold) || 5,
+    overdue_urgent_hours: Number(raw.overdue_urgent_hours) || 4,
+    overdue_high_hours: Number(raw.overdue_high_hours) || 24,
+    overdue_normal_hours: Number(raw.overdue_normal_hours) || 72,
+    overdue_low_hours: Number(raw.overdue_low_hours) || 168,
+    diagnostic_fee: Number(raw.diagnostic_fee) || 0,
+    labor_rate: Number(raw.labor_rate) || 0,
+  };
+  try {
+    await api.settings.update(data);
+    showToast('Business rules saved successfully.');
+  } catch (err) { showToast(err.message, 'error'); }
+});
+
+document.getElementById('invoice-edit-save')?.addEventListener('click', async () => {
+  const id = Number(document.getElementById('inv-edit-id').value);
+  const total = Number(document.getElementById('inv-edit-total').value);
+  const status = document.getElementById('inv-edit-status').value;
+  if (!id) return;
+  try {
+    await api.invoices.update(id, { total, status });
+    closeModal('modal-invoice-edit');
+    loadPage('invoices');
+    showToast('Invoice updated.');
+  } catch (err) { showToast(err.message, 'error'); }
+});
 
 // ---------- Init ----------
 async function initApp() {
   const me = await api.auth.me();
   currentUser = me;
   buildNav();
+  initOrderComboboxes();
   document.querySelectorAll('.nav-item').forEach((item) => {
     item.addEventListener('click', () => switchPage(item.dataset.page));
   });
   renderDashboard();
+  loadNotifications();
 }
 
 initApp();
