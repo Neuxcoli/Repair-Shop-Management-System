@@ -809,6 +809,7 @@ async function openOrderDetail(id) {
   document.getElementById('od-problem').value = order.problem_description ?? '';
   document.getElementById('od-inspection').value = order.inspection_notes ?? '';
   document.getElementById('od-diagnosis').value = order.diagnosis ?? '';
+  document.getElementById('od-diagnosis-notes').value = order.diagnosis_notes ?? '';
   document.getElementById('od-labor').value = order.labor_cost ?? 0;
   document.getElementById('od-estimated').value = order.estimated_cost ?? '';
   document.getElementById('od-actual').value = order.actual_cost != null ? peso(order.actual_cost) : '';
@@ -832,7 +833,7 @@ async function openOrderDetail(id) {
   ['od-labor', 'od-warranty-days', 'od-warranty-notes'].forEach((f) => {
     document.getElementById(f).disabled = !can('repair_order.approve');
   });
-  ['od-inspection', 'od-diagnosis'].forEach((f) => {
+  ['od-inspection', 'od-diagnosis', 'od-diagnosis-notes'].forEach((f) => {
     document.getElementById(f).disabled = !can('repair_order.diagnose');
   });
 
@@ -931,7 +932,9 @@ async function renderOrderInvoice(order) {
 
   if (!invoice) {
     const canInvoice = order.status === 'completed';
+    const diagRef = order.diagnosis_notes || order.diagnosis;
     container.innerHTML = `
+      ${diagRef ? `<div style="background:var(--blue-50); border-left:3px solid var(--blue-600); padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:13px;"><strong>Diagnosis reference:</strong> ${esc(diagRef)}</div>` : ''}
       <div class="cell-sub">No invoice yet.</div>
       ${can('invoice.create') && canInvoice
         ? `<button class="btn btn-primary btn-sm" id="od-generate-invoice" style="margin-top:10px;"><i class="bi bi-receipt"></i> Generate Invoice (${peso(order.quote_total)})</button>`
@@ -1028,6 +1031,7 @@ document.getElementById('od-save').addEventListener('click', async () => {
   if (can('repair_order.diagnose')) {
     payload.inspection_notes = document.getElementById('od-inspection').value;
     payload.diagnosis = document.getElementById('od-diagnosis').value;
+    payload.diagnosis_notes = document.getElementById('od-diagnosis-notes').value;
   }
   if (can('repair_order.create')) {
     payload.problem_description = document.getElementById('od-problem').value;

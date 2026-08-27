@@ -116,6 +116,7 @@ class RepairOrder(Base):
     problem_description = Column(Text)
     inspection_notes = Column(Text)
     diagnosis = Column(Text)
+    diagnosis_notes = Column(Text)
     labor_cost = Column(Numeric(12, 2), default=0)
     warranty_days = Column(Integer, default=0)
     warranty_notes = Column(Text)

@@ -104,6 +104,7 @@ class RepairOrderUpdate(BaseModel):
     problem_description: Optional[str] = None
     inspection_notes: Optional[str] = None
     diagnosis: Optional[str] = None
+    diagnosis_notes: Optional[str] = None
     estimated_cost: Optional[float] = None
     labor_cost: Optional[float] = None
     warranty_days: Optional[int] = None
@@ -132,6 +133,7 @@ class RepairOrderOut(RepairOrderBase):
     updated_at: datetime
     inspection_notes: Optional[str] = None
     diagnosis: Optional[str] = None
+    diagnosis_notes: Optional[str] = None
     labor_cost: float = 0
     warranty_days: int = 0
     warranty_notes: Optional[str] = None
@@ -356,6 +358,7 @@ class TrackOrderOut(BaseModel):
     problem_description: Optional[str] = None
     inspection_notes: Optional[str] = None
     diagnosis: Optional[str] = None
+    diagnosis_notes: Optional[str] = None
     estimated_cost: Optional[float] = None
     actual_cost: Optional[float] = None
     labor_cost: float
