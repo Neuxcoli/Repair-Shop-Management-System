@@ -8,7 +8,12 @@ from fastapi.staticfiles import StaticFiles
 from .database import Base, engine
 from .routers import auth, customers, technicians, items, parts, orders, invoices, payments, dashboard, public, settings, messages, portal, uploads, superadmin
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception:
+    # Keep the app bootable if the DB is briefly unreachable (e.g. cold start
+    # on serverless); tables are created lazily elsewhere when needed.
+    pass
 
 app = FastAPI(title="Repair Shop Management API", version="1.0.0")
 
