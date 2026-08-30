@@ -51,11 +51,16 @@ def login(
     )
     if not user or not verify_password(payload.password, user.password):
         raise HTTPException(401, "Invalid username or password")
+    if user.is_active is False:
+        raise HTTPException(403, "This account has been deactivated. Contact your administrator.")
 
     if login_as == "technician" and user.role != "technician":
         raise HTTPException(403, "This login is for technicians only.")
     if login_as == "admin" and user.role != "admin":
         raise HTTPException(403, "This login is for administrators only.")
+
+    user.last_login_at = datetime.now(timezone.utc)
+    db.commit()
 
     return schemas.LoginResponse(
         access_token=create_access_token(user),

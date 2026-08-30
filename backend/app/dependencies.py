@@ -39,6 +39,7 @@ ALL_PERMISSIONS = {
     "record.delete",
     "settings.manage",
     "settings.view",
+    "superadmin.view",
 }
 
 # Spec §4 role-and-permission matrix.
@@ -56,7 +57,8 @@ ROLE_PERMISSIONS = {
         "dashboard.view",
         "settings.view",
     },
-    "admin": ALL_PERMISSIONS,
+    "admin": ALL_PERMISSIONS - {"superadmin.view"},
+    "superadmin": ALL_PERMISSIONS,
 }
 
 

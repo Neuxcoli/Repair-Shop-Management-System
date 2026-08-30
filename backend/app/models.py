@@ -122,6 +122,7 @@ class RepairOrder(Base):
     warranty_notes = Column(Text)
     priority = Column(Enum(PriorityLevel, name="priority_level"), default=PriorityLevel.normal)
     status = Column(Enum(OrderStatus, name="order_status"), default=OrderStatus.requested)
+    appointment_datetime = Column(DateTime(timezone=True))
     estimated_cost = Column(Numeric(12, 2))
     actual_cost = Column(Numeric(12, 2))
     released_at = Column(DateTime(timezone=True))
@@ -252,6 +253,8 @@ class User(Base):
     role = Column(String(20), nullable=False)
     customer_id = Column(Integer, ForeignKey("repairshop_customers.id", ondelete="CASCADE"))
     technician_id = Column(Integer, ForeignKey("repairshop_technicians.id", ondelete="CASCADE"))
+    is_active = Column(Boolean, default=True)
+    last_login_at = Column(DateTime(timezone=True))
     deleted_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

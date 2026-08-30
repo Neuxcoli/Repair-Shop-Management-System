@@ -9,28 +9,41 @@
 </head>
 <body>
 
-<div class="portal">
-  <header class="portal-topbar">
-    <div class="portal-brand">
-      <div class="brand-icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
       <div>
-        <div class="portal-brand-name">Precision Repair</div>
-        <div class="portal-brand-sub">MY PORTAL</div>
+        <div class="brand-name">Precision Repair</div>
+        <div class="brand-sub">MY PORTAL</div>
       </div>
     </div>
-    <nav class="portal-nav" id="portal-nav">
-      <button class="portal-nav-item active" data-view="repairs"><i class="bi bi-clipboard2-check"></i> My Repairs</button>
-      <button class="portal-nav-item" data-view="invoices"><i class="bi bi-receipt"></i> Invoices</button>
-      <button class="portal-nav-item" data-view="request"><i class="bi bi-plus-circle"></i> Book Repair</button>
+
+    <nav id="portal-nav">
+      <button class="nav-item active" data-view="repairs"><i class="bi bi-clipboard2-check"></i> My Repairs</button>
+      <button class="nav-item" data-view="track"><i class="bi bi-geo-alt"></i> Track Repair</button>
+      <button class="nav-item" data-view="invoices"><i class="bi bi-receipt"></i> Invoices</button>
+      <button class="nav-item" data-view="request"><i class="bi bi-plus-circle"></i> Book Repair</button>
     </nav>
-    <div class="portal-user">
-      <span class="portal-name" id="portal-name">—</span>
-      <button class="btn btn-secondary btn-sm" id="portal-logout"><i class="bi bi-box-arrow-right"></i> Log out</button>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger-btn" id="portal-hamburger" aria-label="Menu"><i class="bi bi-list"></i></button>
+      <div class="spacer"></div>
+      <div class="portal-user">
+        <span class="portal-name" id="portal-name">—</span>
+        <button class="btn btn-secondary btn-sm" id="portal-logout"><i class="bi bi-box-arrow-right"></i> Log out</button>
+      </div>
     </div>
-  </header>
+
+    <div class="content">
 
   <!-- ============ REPAIRS VIEW ============ -->
-  <div class="portal-content" id="view-repairs">
+  <div id="view-repairs">
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;">
       <div>
         <h1 class="page-title">My Repairs</h1>
@@ -61,8 +74,27 @@
     </div>
   </div>
 
+  <!-- ============ TRACK VIEW ============ -->
+  <div id="view-track" hidden>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Track Repair</h1>
+        <p class="page-sub">Follow the progress of any of your repair orders in real time.</p>
+      </div>
+    </div>
+    <div class="panel" style="max-width:820px;">
+      <div class="panel-body" style="padding:24px;">
+        <div class="field">
+          <label for="track-order-select">Repair Order</label>
+          <select class="input" id="track-order-select"></select>
+        </div>
+        <div id="track-panel"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ REQUEST VIEW ============ -->
-  <div class="portal-content" id="view-request" hidden>
+  <div id="view-request" hidden>
     <div class="page-header">
       <div>
         <h1 class="page-title">Book a New Repair</h1>
@@ -95,6 +127,21 @@
             <label for="portal-problem">Reported Issue</label>
             <input class="input" id="portal-problem" placeholder="Describe the problem in your own words…" required>
           </div>
+
+          <div class="field">
+            <label for="portal-appt-date">Preferred Appointment Date</label>
+            <input class="input" type="date" id="portal-appt-date" min="">
+            <div class="cell-sub" style="margin-top:4px;">Open Mon–Sat, 8:00 AM – 6:00 PM. Pick a date to see open slots.</div>
+          </div>
+          <div class="field" id="portal-slots-wrap" hidden>
+            <label>Available Time Slots</label>
+            <div class="slot-grid" id="portal-slot-grid"></div>
+          </div>
+          <div class="field" id="portal-slot-selected" hidden>
+            <label>Selected Appointment</label>
+            <div class="slot-selected" id="portal-slot-selected-label"></div>
+          </div>
+
           <button class="btn btn-primary" id="portal-submit" type="submit"><i class="bi bi-send"></i> Submit Request</button>
           <div class="contact-success" id="portal-request-success" hidden>
             <i class="bi bi-check-circle"></i> Request submitted! We'll review it shortly.
@@ -105,7 +152,7 @@
   </div>
 
   <!-- ============ INVOICES VIEW ============ -->
-  <div class="portal-content" id="view-invoices" hidden>
+  <div id="view-invoices" hidden>
     <div class="page-header">
       <div>
         <h1 class="page-title">Invoices &amp; Receipts</h1>
@@ -121,6 +168,8 @@
       </div>
     </div>
   </div>
+  </div>
+</div>
 </div>
 
 <!-- Order detail modal -->

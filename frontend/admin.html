@@ -38,6 +38,10 @@
         <div id="notif-list" class="notif-list"></div>
       </div>
       <div class="user-menu">
+        <div class="user-chip">
+          <div class="user-chip-name" id="topbar-name">—</div>
+          <div class="user-chip-role" id="topbar-role">—</div>
+        </div>
         <div class="avatar" id="topbar-avatar" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">--</div>
         <div class="user-menu-pop" id="user-menu-pop" hidden>
           <div class="user-menu-head">
@@ -81,6 +85,145 @@
           <div class="panel">
             <div class="panel-header"><h3 class="panel-title" id="dashboard-panel-title-2">Recent Activity</h3></div>
             <div id="dashboard-activity"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SYSTEM OVERVIEW (SUPERADMIN) ============ -->
+      <section class="page" id="page-system">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">System Overview</h1>
+            <p class="page-sub">System-wide visibility across administrator, technician, and customer accounts.</p>
+          </div>
+        </div>
+
+        <div class="kpi-row" id="system-kpis">
+          <!-- populated by main.js -->
+        </div>
+
+        <div class="kpi-row" id="system-kpis-2">
+          <!-- populated by main.js -->
+        </div>
+      </section>
+
+      <!-- ============ ACCOUNTS (SUPERADMIN) ============ -->
+      <section class="page" id="page-accounts">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Accounts</h1>
+            <p class="page-sub">All admin, technician, and customer accounts across the system.</p>
+          </div>
+          <button class="btn btn-primary" id="accounts-new"><i class="bi bi-person-plus"></i> New Account</button>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <select class="input" id="accounts-role-filter" style="width:160px;">
+              <option value="all">All Roles</option>
+              <option value="admin">Admins</option>
+              <option value="superadmin">Super Admins</option>
+              <option value="technician">Technicians</option>
+              <option value="customer">Customers</option>
+            </select>
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="accounts-search" placeholder="Search by name, username, or email..."></div>
+            <div class="spacer"></div>
+            <div class="cell-sub" id="accounts-count"></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Role</th>
+                  <th>Name / Email</th>
+                  <th>Status</th>
+                  <th>Last Login</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="accounts-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PERFORMANCE (SUPERADMIN) ============ -->
+      <section class="page" id="page-performance">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Technician Performance</h1>
+            <p class="page-sub">Shop-wide productivity across all technicians. Click any column to sort.</p>
+          </div>
+          <button class="btn btn-secondary" id="performance-refresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="performance-search" placeholder="Search technicians by name, email, or specialty..."></div>
+            <div class="spacer"></div>
+            <div class="cell-sub" id="performance-count"></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="full_name" class="sortable">Technician <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th>
+                  <th data-sort="status" class="sortable">Status <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th>
+                  <th data-sort="total_orders" class="sortable">Total Orders <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th>
+                  <th data-sort="completed_orders" class="sortable">Completed <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th>
+                  <th data-sort="open_orders" class="sortable">Open <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th>
+                  <th data-sort="overdue_orders" class="sortable">Overdue <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th>
+                  <th data-sort="overdue_rate" class="sortable">Overdue Rate <i class="bi bi-arrow-down-up" aria-hidden="true"></i></th>
+                </tr>
+              </thead>
+              <tbody id="performance-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CUSTOMER INSIGHTS (SUPERADMIN) ============ -->
+      <section class="page" id="page-insights">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Customer Insights</h1>
+            <p class="page-sub">Top customers by repairs and spend, and their lifecycle status.</p>
+          </div>
+          <button class="btn btn-secondary" id="insights-refresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+
+        <div class="kpi-row" id="insights-breakdown">
+          <!-- populated by main.js -->
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <select class="input" id="insights-sort" style="width:200px;">
+              <option value="spent">Sort by Total Spent</option>
+              <option value="orders">Sort by Repair Count</option>
+              <option value="name">Sort by Name</option>
+            </select>
+            <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="insights-search" placeholder="Search customers by name, email, or phone..."></div>
+            <div class="spacer"></div>
+            <div class="cell-sub" id="insights-count"></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Repairs</th>
+                  <th>Total Spent</th>
+                  <th>Last Order</th>
+                </tr>
+              </thead>
+              <tbody id="insights-table-body"></tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -461,6 +604,19 @@
       </div>
       <div class="field-row">
         <div class="field">
+          <label>Appointment Date <span style="color:var(--gray-400); font-weight:400;">(optional)</span></label>
+          <input class="input" type="date" id="od-appt-date" min="">
+        </div>
+        <div class="field">
+          <label>Appointment Time Slot <span style="color:var(--gray-400); font-weight:400;">(optional)</span></label>
+          <select class="input" id="od-appt-slot" disabled>
+            <option value="">Select a date first…</option>
+          </select>
+        </div>
+      </div>
+      <input type="hidden" id="od-appt-datetime">
+      <div class="field-row">
+        <div class="field">
           <label>Priority</label>
           <select class="input" name="priority">
             <option value="normal">Normal</option>
@@ -821,6 +977,89 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" data-close-modal="modal-password">Cancel</button>
       <button class="btn btn-primary" id="change-pw-submit">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: NEW ACCOUNT (SUPERADMIN) ================= -->
+<div class="modal-overlay" id="modal-account">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">New Account</h3>
+      <button class="modal-close" data-close-modal="modal-account">&times;</button>
+    </div>
+    <form class="modal-body" id="form-account">
+      <div class="field">
+        <label>Role</label>
+        <select class="input" id="account-role" name="account_role">
+          <option value="admin">Admin</option>
+          <option value="superadmin">Super Admin</option>
+          <option value="technician">Technician</option>
+          <option value="customer">Customer</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Full Name</label>
+          <input class="input" name="account_name" placeholder="e.g. Juan Dela Cruz" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input class="input" name="account_username" placeholder="e.g. juan.d" required autocomplete="off">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Email</label>
+          <input class="input" name="account_email" placeholder="name@precisionrepair.com" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input class="input" name="account_phone" placeholder="+63 9XX XXX XXXX" autocomplete="off">
+        </div>
+      </div>
+      <div class="field" id="account-specialty-wrap" hidden>
+        <label>Specialty</label>
+        <select class="input" name="account_specialty" id="account_specialty">
+          <option>Automotive</option>
+          <option>Electronics</option>
+          <option>Appliances</option>
+          <option>General</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input class="input" type="password" name="account_password" placeholder="At least 6 characters" autocomplete="new-password" required>
+        <div class="cell-sub">At least 6 characters.</div>
+      </div>
+      <div class="login-error" id="account-error" hidden></div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-account">Cancel</button>
+      <button class="btn btn-primary" id="account-save">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: RESET PASSWORD (SUPERADMIN) ================= -->
+<div class="modal-overlay" id="modal-resetpwd">
+  <div class="modal" data-drag>
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title">Reset Account Password</h3>
+      <button class="modal-close" data-close-modal="modal-resetpwd">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="resetpwd-current-account" class="cell-sub" style="margin-bottom:12px;">Account #—</div>
+      <div class="field">
+        <label>New Password</label>
+        <input class="input" type="password" id="resetpwd-password" placeholder="At least 6 characters" autocomplete="new-password" required>
+        <div class="cell-sub">At least 6 characters. The account's password will be set immediately.</div>
+      </div>
+      <div class="login-error" id="resetpwd-error" hidden></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-resetpwd">Cancel</button>
+      <button class="btn btn-primary" id="resetpwd-save">Reset Password</button>
     </div>
   </div>
 </div>

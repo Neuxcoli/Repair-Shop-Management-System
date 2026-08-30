@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -91,6 +91,7 @@ class RepairOrderBase(BaseModel):
     problem_description: Optional[str] = None
     priority: PriorityLevel = PriorityLevel.normal
     status: OrderStatus = OrderStatus.requested
+    appointment_datetime: Optional[datetime] = None
 
 
 class RepairOrderCreate(RepairOrderBase):
@@ -109,6 +110,7 @@ class RepairOrderUpdate(BaseModel):
     labor_cost: Optional[float] = None
     warranty_days: Optional[int] = None
     warranty_notes: Optional[str] = None
+    appointment_datetime: Optional[datetime] = None
 
 
 class RepairOrderPartCreate(BaseModel):
@@ -256,6 +258,37 @@ class TechnicianWorkloadOut(BaseModel):
     completed_orders: int = 0
 
 
+# ---------- Technician Performance (shop-wide, superadmin) ----------
+class TechnicianPerformanceOut(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    specialty: str
+    status: str
+    total_orders: int = 0
+    open_orders: int = 0
+    completed_orders: int = 0
+    overdue_orders: int = 0
+    overdue_rate: float = 0.0
+
+
+# ---------- Customer insights (shop-wide, superadmin) ----------
+class CustomerInsightOut(BaseModel):
+    id: int
+    full_name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    total_orders: int = 0
+    total_spent: float = 0.0
+    last_order_at: Optional[datetime] = None
+    status: str  # "in_progress" | "completed" | "no_orders"
+
+
+class CustomerInsightsOverview(BaseModel):
+    status_breakdown: dict
+    customers: list[CustomerInsightOut]
+
+
 # ---------- Customer Orders (drill-down) ----------
 class CustomerOrderOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -284,6 +317,50 @@ class DashboardSummary(BaseModel):
     low_stock_parts: int
     revenue_this_month: float
     orders_by_status: dict
+
+
+# ---------- Superadmin system overview ----------
+class SuperadminOverview(BaseModel):
+    admins: int
+    technicians: int
+    customers: int
+    orders_total: int
+    orders_this_month: int
+    revenue_total: float
+    revenue_this_month: float
+    new_customers_this_month: int
+    new_orders_this_month: int
+
+
+# ---------- Superadmin account management ----------
+class AccountOut(BaseModel):
+    user_id: int
+    username: str
+    role: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    is_active: bool
+    last_login_at: Optional[datetime] = None
+    created_at: datetime
+
+
+class AccountCreate(BaseModel):
+    username: str
+    password: str
+    role: str  # "admin" | "superadmin" | "technician" | "customer"
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    specialty: Optional[str] = "General"
+
+
+class AccountStatusUpdate(BaseModel):
+    is_active: bool
+
+
+class AccountPasswordUpdate(BaseModel):
+    new_password: str
 
 
 # ---------- Auth ----------
@@ -430,6 +507,7 @@ class PortalOrderCreate(BaseModel):
     item_description: Optional[str] = None
     item_identifier: Optional[str] = None
     problem_description: Optional[str] = None
+    appointment_datetime: Optional[datetime] = None
 
 
 class PortalOrderListOut(BaseModel):
@@ -439,7 +517,10 @@ class PortalOrderListOut(BaseModel):
     priority: str
     tracking_token: Optional[str] = None
     created_at: datetime
+    updated_at: datetime
+    released_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    appointment_datetime: Optional[datetime] = None
     item_description: Optional[str] = None
     item_identifier: Optional[str] = None
 
@@ -453,6 +534,7 @@ class PortalOrderDetailOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
+    appointment_datetime: Optional[datetime] = None
     item_description: Optional[str] = None
     item_identifier: Optional[str] = None
     problem_description: Optional[str] = None
@@ -472,3 +554,18 @@ class PortalLineOut(BaseModel):
     quantity: int
     unit_price: float
     line_total: float
+
+
+# ---------- Appointment availability ----------
+class SlotOut(BaseModel):
+    start: datetime
+    start_utc: datetime
+    end: datetime
+    available: bool
+
+
+class AvailabilityOut(BaseModel):
+    date: date
+    open: bool
+    slot_minutes: int
+    slots: list[SlotOut] = Field(default_factory=list)

@@ -11,18 +11,34 @@ document.getElementById('portal-name').textContent = user.full_name || user.emai
 document.getElementById('portal-logout').addEventListener('click', () => { clearAuth(); window.location.href = '/login.html'; });
 
 // ---------- View switching ----------
-const views = ['repairs', 'invoices', 'request'];
-document.querySelectorAll('.portal-nav-item').forEach((btn) => {
+const views = ['repairs', 'track', 'invoices', 'request'];
+const navItems = document.querySelectorAll('.nav-item');
+navItems.forEach((btn) => {
   btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
 document.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => switchView(el.dataset.goto)));
 
+// ---------- Mobile sidebar ----------
+const sidebar = document.querySelector('.sidebar');
+const hamburger = document.getElementById('portal-hamburger');
+let overlay = document.querySelector('.sidebar-overlay');
+if (sidebar && !overlay) {
+  overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  sidebar.parentNode.insertBefore(overlay, sidebar);
+}
+const closeSidebar = () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); };
+hamburger.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
+overlay.addEventListener('click', closeSidebar);
+navItems.forEach((n) => n.addEventListener('click', closeSidebar));
+
 function switchView(view) {
-  document.querySelectorAll('.portal-nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
+  navItems.forEach((b) => b.classList.toggle('active', b.dataset.view === view));
   views.forEach((v) => {
     document.getElementById('view-' + v).hidden = v !== view;
   });
   if (view === 'repairs') loadAllRepairs();
+  if (view === 'track') loadTrack();
   if (view === 'invoices') loadInvoices();
 }
 
@@ -32,6 +48,59 @@ const itemSelect = document.getElementById('portal-item-select');
 const newItemToggle = document.getElementById('portal-new-item-toggle');
 const newItemFields = document.getElementById('portal-new-item-fields');
 const submitBtn = document.getElementById('portal-submit');
+const apptDateInput = document.getElementById('portal-appt-date');
+const slotsWrap = document.getElementById('portal-slots-wrap');
+const slotGrid = document.getElementById('portal-slot-grid');
+const slotSelected = document.getElementById('portal-slot-selected');
+const slotSelectedLabel = document.getElementById('portal-slot-selected-label');
+let selectedAppointment = null;
+
+// Appointment date picker defaults to today and cannot be in the past.
+(function initAppt() {
+  const today = new Date();
+  const iso = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  apptDateInput.min = iso;
+})();
+
+function localISO(d) {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
+}
+
+const dateTimeFmt = (iso) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+apptDateInput.addEventListener('change', async () => {
+  selectedAppointment = null;
+  slotSelected.hidden = true;
+  if (!apptDateInput.value) { slotsWrap.hidden = true; slotGrid.innerHTML = ''; return; }
+  try {
+    const av = await api.public.availability(apptDateInput.value);
+    slotsWrap.hidden = false;
+    if (!av.open) {
+      slotGrid.innerHTML = '<div class="portal-empty" style="grid-column:1/-1;">The shop is closed on this day.</div>';
+      return;
+    }
+    slotGrid.innerHTML = av.slots
+      .map((s, i) => {
+        const d = new Date(s.start);
+        const label = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        return `<button type="button" class="slot-btn${s.available ? '' : ' slot-taken'}" data-slot="${i}" title="${s.available ? 'Select this slot' : 'Already booked'}" ${s.available ? '' : 'disabled'}>${label}</button>`;
+      })
+      .join('');
+    slotGrid.querySelectorAll('[data-slot]').forEach((b) => b.addEventListener('click', () => {
+      if (b.disabled) return;
+      slotGrid.querySelectorAll('.slot-btn').forEach((x) => x.classList.remove('slot-selected'));
+      b.classList.add('slot-selected');
+      const slot = av.slots[Number(b.dataset.slot)];
+      selectedAppointment = { start: slot.start, label: b.textContent };
+      slotSelectedLabel.textContent = `${b.textContent} — ${new Date(slot.start).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}`;
+      slotSelected.hidden = false;
+    }));
+  } catch (err) {
+    slotsWrap.hidden = true;
+    slotGrid.innerHTML = '';
+    showToast('Could not load availability.', 'error');
+  }
+});
 
 newItemToggle.addEventListener('change', () => {
   newItemFields.hidden = !newItemToggle.checked;
@@ -56,6 +125,7 @@ form.addEventListener('submit', async (e) => {
     const data = {
       type: newItemToggle.checked ? 'new' : 'existing',
       problem_description: document.getElementById('portal-problem').value.trim() || null,
+      appointment_datetime: selectedAppointment ? selectedAppointment.start : null,
     };
     if (newItemToggle.checked) {
       data.item_description = document.getElementById('portal-item-desc').value.trim();
@@ -70,6 +140,11 @@ form.addEventListener('submit', async (e) => {
     itemSelect.disabled = false;
     itemSelect.required = true;
     document.getElementById('portal-item-desc').required = false;
+    selectedAppointment = null;
+    slotSelected.hidden = true;
+    slotsWrap.hidden = true;
+    slotGrid.innerHTML = '';
+    apptDateInput.value = '';
     const success = document.getElementById('portal-request-success');
     success.hidden = false;
     setTimeout(() => { success.hidden = true; }, 4000);
@@ -108,9 +183,81 @@ function orderCardHtml(o, opts = {}) {
         ${badge(STATUS_BADGE[o.status] || 'grey', label(o.status))}
       </div>
       <div>${esc(o.item_description || '')}${o.item_identifier ? ` <span class="cell-sub">· ${esc(o.item_identifier)}</span>` : ''}</div>
-      <div class="cell-sub">${dateFmt(o.created_at)}${o.completed_at ? ` · completed ${dateFmt(o.completed_at)}` : ''}</div>
+      <div class="cell-sub">${dateFmt(o.created_at)}${o.completed_at ? ` · completed ${dateFmt(o.completed_at)}` : ''}${o.appointment_datetime ? ` · appt ${dateTimeFmt(o.appointment_datetime)}` : ''}</div>
       ${actions.length ? `<div class="order-card-actions">${actions.join('')}</div>` : ''}
     </div>`;
+}
+
+// ---------- Tracking ----------
+const TRACK_STEPS = ['requested', 'diagnosed', 'approved', 'in_progress', 'completed', 'closed'];
+const TRACK_STATUS_INDEX = {
+  requested: 0, diagnosed: 1, approved: 2,
+  in_progress: 3, on_hold: 3, completed: 4, invoiced: 4, closed: 5,
+};
+const TRACK_PRIORITY_COLOR = { urgent: '#E11D48', high: '#D97706', normal: '#2563EB', low: '#6b7280' };
+
+function stepper(status) {
+  const idx = TRACK_STATUS_INDEX[status] ?? -1;
+  return `<div class="stepper">${TRACK_STEPS.map((s, i) => `
+    <div class="step ${i <= idx ? 'done' : ''}">
+      <div class="step-dot">${i <= idx ? '&#10003;' : ''}</div>
+      <div class="step-label">${label(s)}</div>
+    </div>`).join('')}</div>`;
+}
+
+async function loadTrack() {
+  const select = document.getElementById('track-order-select');
+  const panel = document.getElementById('track-panel');
+  let orders;
+  try {
+    orders = await api.portal.orders.list();
+  } catch (err) {
+    panel.innerHTML = '<div class="portal-empty">Could not load your repairs.</div>';
+    return;
+  }
+  if (!orders.length) {
+    select.innerHTML = '<option value="">No repairs yet</option>';
+    panel.innerHTML = '<div class="portal-empty">You have no repairs to track yet. <button class="btn btn-primary btn-sm" data-goto="request" style="margin-top:10px;"><i class="bi bi-plus-circle"></i> Book a repair</button></div>';
+    document.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => switchView(el.dataset.goto)));
+    return;
+  }
+
+  const sorted = [...orders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const defaultId = (sorted.find((o) => !TERMINAL.includes(o.status)) || sorted[0]).id;
+  select.innerHTML = sorted.map((o) =>
+    `<option value="${o.id}"${o.id === defaultId ? ' selected' : ''}>${esc(o.ro_number)} · ${label(o.status)} · ${dateFmt(o.created_at)}</option>`
+  ).join('');
+
+  const renderTrack = (o) => {
+    panel.innerHTML = `
+      <div class="result">
+        <div class="result-head">
+          <div>
+            <div class="result-ro">${esc(o.ro_number)}</div>
+            <div class="result-sub">${esc(o.item_description || 'Repair order')}${o.item_identifier ? ` &middot; ${esc(o.item_identifier)}` : ''}</div>
+          </div>
+          ${badge(STATUS_BADGE[o.status] || 'grey', label(o.status))}
+        </div>
+        ${['cancelled', 'rejected'].includes(o.status)
+          ? `<div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600;margin-bottom:16px;">This repair order was ${o.status}.</div>`
+          : stepper(o.status)}
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-label">Priority</div><div class="detail-value" style="color:${TRACK_PRIORITY_COLOR[o.priority] || '#6b7280'};font-weight:600;">${label(o.priority)}</div></div>
+          <div class="detail-item"><div class="detail-label">Date Received</div><div class="detail-value">${dateFmt(o.created_at)}</div></div>
+          <div class="detail-item"><div class="detail-label">Last Updated</div><div class="detail-value">${dateFmt(o.updated_at)}</div></div>
+          ${o.appointment_datetime ? `<div class="detail-item"><div class="detail-label">Appointment</div><div class="detail-value">${dateTimeFmt(o.appointment_datetime)}</div></div>` : ''}
+          ${o.released_at ? `<div class="detail-item"><div class="detail-label">Released</div><div class="detail-value">${dateFmt(o.released_at)}</div></div>` : ''}
+          ${o.completed_at ? `<div class="detail-item"><div class="detail-label">Completed</div><div class="detail-value">${dateFmt(o.completed_at)}</div></div>` : ''}
+        </div>
+      </div>`;
+  };
+
+  const paint = () => {
+    const found = sorted.find((x) => x.id === Number(select.value)) || sorted[0];
+    if (found) renderTrack(found);
+  };
+  paint();
+  select.addEventListener('change', paint);
 }
 
 // ---------- Quote approvals ----------
@@ -205,6 +352,7 @@ async function openDetail(id) {
       <div class="detail-item"><div class="detail-label">Serial/Plate</div><div class="detail-value">${esc(o.item_identifier || '—')}</div></div>
       <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value">${badge(STATUS_BADGE[o.status] || 'grey', label(o.status))}</div></div>
       <div class="detail-item"><div class="detail-label">Submitted</div><div class="detail-value">${dateFmt(o.created_at)}</div></div>
+      <div class="detail-item"><div class="detail-label">Appointment</div><div class="detail-value">${o.appointment_datetime ? dateTimeFmt(o.appointment_datetime) : 'Not scheduled'}</div></div>
       <div class="detail-item"><div class="detail-label">Estimated Completion</div><div class="detail-value">${o.completed_at ? dateFmt(o.completed_at) : 'To be determined'}</div></div>
     </div>
     <div class="field"><label>Reported Issue</label><textarea class="input" rows="3" readonly>${esc(o.problem_description ?? '—')}</textarea></div>
@@ -317,3 +465,14 @@ document.querySelectorAll('.modal-overlay').forEach((o) => o.addEventListener('m
 loadItems();
 loadAllRepairs();
 loadInvoices();
+
+// Prefill the booking form when arriving from a landing-page service CTA.
+(function prefillService() {
+  const service = new URLSearchParams(window.location.search).get('service');
+  if (!service) return;
+  const problemField = document.getElementById('portal-problem');
+  const descField = document.getElementById('portal-item-desc');
+  problemField.value = `Requesting service: ${service}`;
+  if (descField) descField.placeholder = `e.g. 2021 Honda Civic — ${service}`;
+  switchView('request');
+})();

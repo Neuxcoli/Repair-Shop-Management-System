@@ -5,6 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from .. import models, schemas
+from ..availability import validate_slot
 from ..database import get_db
 from ..dependencies import has_permission, require_permission, utcnow
 
@@ -181,6 +182,11 @@ def create_order(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_permission("repair_order.create")),
 ):
+    if payload.appointment_datetime is not None:
+        try:
+            validate_slot(db, payload.appointment_datetime)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
     if not db.query(models.Customer).filter(
         models.Customer.id == payload.customer_id, models.Customer.deleted_at.is_(None)
     ).first():

@@ -18,7 +18,11 @@ form.addEventListener('submit', async (e) => {
       password: form.password.value,
     });
     setAuth(data.access_token, data.user);
-    window.location.href = data.user.role === 'customer' ? '/customer.html' : '/admin.html';
+    const service = new URLSearchParams(window.location.search).get('service');
+    const dest = data.user.role === 'customer'
+      ? '/customer.html' + (service ? `?service=${encodeURIComponent(service)}` : '')
+      : '/admin.html';
+    window.location.href = dest;
   } catch (err) {
     errorEl.textContent = err.message || 'Sign in failed.';
     errorEl.hidden = false;

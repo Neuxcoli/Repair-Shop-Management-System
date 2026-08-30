@@ -99,8 +99,25 @@ export const api = {
       get: (id) => request(`/portal/invoices/${id}`),
     },
   },
+  public: {
+    availability: (dateStr) => request(`/public/availability?date=${encodeURIComponent(dateStr)}`),
+  },
   dashboard: {
     summary: () => request('/dashboard/summary'),
+  },
+  superadmin: {
+    overview: () => request('/superadmin/overview'),
+    accounts: {
+      list: (params = {}) => {
+        const qs = new URLSearchParams(params).toString();
+        return request(`/superadmin/accounts${qs ? `?${qs}` : ''}`);
+      },
+      create: (data) => request('/superadmin/accounts', { method: 'POST', body: JSON.stringify(data) }),
+      setStatus: (userId, isActive) => request(`/superadmin/accounts/${userId}/status`, { method: 'PATCH', body: JSON.stringify({ is_active: isActive }) }),
+      resetPassword: (userId, newPassword) => request(`/superadmin/accounts/${userId}/password`, { method: 'POST', body: JSON.stringify({ new_password: newPassword }) }),
+    },
+    technicianPerformance: () => request('/superadmin/technician-performance'),
+    customerInsights: () => request('/superadmin/customer-insights'),
   },
   customers: {
     list: (q = '') => request(`/customers${q ? `?q=${encodeURIComponent(q)}` : ''}`),

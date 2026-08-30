@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
+from ..availability import validate_slot
 from ..database import get_db
 from ..dependencies import get_current_user
 from .orders import ORDER_OPTIONS, _next_ro_number, _record_status_change
@@ -97,7 +98,10 @@ def _order_list_out(o: models.RepairOrder) -> schemas.PortalOrderListOut:
         priority=o.priority.value if isinstance(o.priority, models.PriorityLevel) else o.priority,
         tracking_token=o.tracking_token,
         created_at=o.created_at,
+        updated_at=o.updated_at,
+        released_at=o.released_at,
         completed_at=o.completed_at,
+        appointment_datetime=o.appointment_datetime,
         item_description=o.item.description if o.item else None,
         item_identifier=o.item.identifier if o.item else None,
     )
@@ -140,6 +144,7 @@ def _order_detail_out(db: Session, o: models.RepairOrder) -> schemas.PortalOrder
         created_at=o.created_at,
         updated_at=o.updated_at,
         completed_at=o.completed_at,
+        appointment_datetime=o.appointment_datetime,
         item_description=o.item.description if o.item else None,
         item_identifier=o.item.identifier if o.item else None,
         problem_description=o.problem_description,
@@ -187,6 +192,13 @@ def create_order(
     db: Session = Depends(get_db),
     user: models.User = Depends(_customer_user),
 ):
+    # Validate the chosen appointment slot before creating anything.
+    if payload.appointment_datetime is not None:
+        try:
+            validate_slot(db, payload.appointment_datetime)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+
     # Support both an existing item and a brand-new item in one request.
     if payload.type == "new":
         item = models.Item(
@@ -220,6 +232,7 @@ def create_order(
         item_id=item_id,
         problem_description=payload.problem_description,
         status=models.OrderStatus.requested,
+        appointment_datetime=payload.appointment_datetime,
     )
     db.add(order)
     db.flush()

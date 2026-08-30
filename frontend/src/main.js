@@ -16,6 +16,7 @@ if (!currentUser || !localStorage.getItem('rs_token')) {
 const ROLE_LABEL = {
   admin: 'Administrator',
   technician: 'Technician',
+  superadmin: 'Super Admin',
 };
 
 const can = (perm) => currentUser.permissions?.includes(perm) ?? false;
@@ -24,6 +25,26 @@ const NAV = {
   admin: {
     Management: [
       ['dashboard', 'bi-grid-1x2-fill', 'Dashboard'],
+      ['orders', 'bi-clipboard2-check', 'Repair Orders'],
+      ['customers', 'bi-people', 'Customers'],
+      ['technicians', 'bi-person-badge', 'Technicians'],
+      ['messages', 'bi-envelope', 'Messages'],
+      ['settings', 'bi-gear', 'Settings'],
+    ],
+    Operations: [
+      ['inventory', 'bi-box-seam', 'Inventory'],
+      ['invoices', 'bi-receipt', 'Invoices'],
+    ],
+  },
+  superadmin: {
+    System: [
+      ['system', 'bi-grid-1x2-fill', 'System Overview'],
+      ['accounts', 'bi-person-lines-fill', 'Accounts'],
+      ['performance', 'bi-graph-up-arrow', 'Performance'],
+      ['insights', 'bi-people-fill', 'Customer Insights'],
+      ['dashboard', 'bi-speedometer2', 'Workshop Dashboard'],
+    ],
+    Management: [
       ['orders', 'bi-clipboard2-check', 'Repair Orders'],
       ['customers', 'bi-people', 'Customers'],
       ['technicians', 'bi-person-badge', 'Technicians'],
@@ -152,6 +173,8 @@ function buildNav() {
   document.getElementById('user-menu-avatar').textContent = initials(currentUser.full_name || currentUser.username);
   document.getElementById('user-menu-name').textContent = currentUser.full_name || currentUser.username;
   document.getElementById('user-menu-role').textContent = ROLE_LABEL[currentUser.role] || currentUser.role;
+  document.getElementById('topbar-name').textContent = currentUser.full_name || currentUser.username;
+  document.getElementById('topbar-role').textContent = ROLE_LABEL[currentUser.role] || currentUser.role;
 
   const MODAL_PERM = {
     'modal-order': 'repair_order.create',
@@ -288,6 +311,10 @@ function switchPage(page) {
 function loadPage(page) {
   const loaders = {
     dashboard: renderDashboard,
+    system: renderSystemOverview,
+    accounts: renderAccounts,
+    performance: renderPerformance,
+    insights: renderCustomerInsights,
     orders: renderOrders,
     customers: renderCustomers,
     technicians: renderTechnicians,
@@ -377,6 +404,7 @@ document.querySelectorAll('[data-submit-form]').forEach((btn) => {
             : currentUser.role === 'technician' ? currentUser.technician_id : null,
           problem_description: data.problem_description || null,
           priority: data.priority,
+          appointment_datetime: document.getElementById('od-appt-datetime').value || null,
         });
         closeModal('modal-order'); form.reset(); loadPage('orders');
         showToast('Repair order created.');
@@ -629,7 +657,327 @@ async function renderDashboard() {
         <div class="activity-sub">${o.customer?.full_name ?? ''} · ${label(o.status)}</div>
       </div>
     </div>
-  `).join('') || '<div class="activity-item cell-sub">No recent activity.</div>';
+    `).join('') || '<div class="activity-item cell-sub">No recent activity.</div>';
+}
+
+// ---------- Superadmin system overview ----------
+async function renderSystemOverview() {
+  const data = await api.superadmin.overview();
+
+  const kpi = (icon, bg, fg, labelText, value, sub = '') => `
+    <div class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon" style="background:${bg}; color:${fg};"><i class="bi ${icon}"></i></div></div>
+      <div class="kpi-label">${labelText}</div>
+      <div class="kpi-value">${value}</div>
+      ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
+    </div>`;
+
+  document.getElementById('system-kpis').innerHTML = [
+    kpi('bi-person-badge', 'var(--blue-50)', 'var(--blue-600)', 'Admins', data.admins),
+    kpi('bi-person-gear', 'var(--emerald-50)', 'var(--emerald-600)', 'Technicians', data.technicians),
+    kpi('bi-people', 'var(--amber-50)', 'var(--amber-600)', 'Customers', data.customers),
+    kpi('bi-clipboard2-check', 'var(--blue-50)', 'var(--blue-600)', 'Repair Orders (All-time)', data.orders_total, `${data.new_orders_this_month} new this month`),
+  ].join('');
+
+  document.getElementById('system-kpis-2').innerHTML = [
+    kpi('bi-calendar-month', 'var(--amber-50)', 'var(--amber-700)', 'Orders This Month', data.orders_this_month),
+    kpi('bi-cash-stack', 'var(--emerald-50)', 'var(--emerald-600)', 'Revenue (All-time)', peso(data.revenue_total)),
+    kpi('bi-cash-coin', 'var(--blue-50)', 'var(--blue-700)', 'Revenue This Month', peso(data.revenue_this_month)),
+    kpi('bi-person-plus', 'var(--rose-50)', 'var(--rose-700)', 'New Customers This Month', data.new_customers_this_month),
+  ].join('');
+}
+
+// ---------- Superadmin account management ----------
+let accountFilters = { role: 'all', q: '' };
+const ROLE_BADGE = { admin: 'blue', superadmin: 'purple', technician: 'emerald', customer: 'amber' };
+
+function accountDateTime(iso) {
+  if (!iso) return '<span class="cell-sub">Never</span>';
+  const d = new Date(iso);
+  return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+async function renderAccounts() {
+  const params = {};
+  if (accountFilters.role && accountFilters.role !== 'all') params.role = accountFilters.role;
+  if (accountFilters.q.trim()) params.q = accountFilters.q.trim();
+  const accounts = await api.superadmin.accounts.list(params);
+
+  document.getElementById('accounts-count').textContent = `${accounts.length} account${accounts.length === 1 ? '' : 's'}`;
+  document.getElementById('accounts-table-body').innerHTML = accounts.map((a) => `
+    <tr>
+      <td>
+        <div class="cell-main">${esc(a.username)}</div>
+        <div class="cell-sub">#${a.user_id}</div>
+      </td>
+      <td>${badge(ROLE_BADGE[a.role] || 'grey', label(a.role))}</td>
+      <td>
+        <div class="cell-main">${esc(a.name || '—')}</div>
+        <div class="cell-sub">${esc(a.email || '')}</div>
+      </td>
+      <td>${a.is_active ? badge('green', 'Active') : badge('grey', 'Deactivated')}</td>
+      <td>${accountDateTime(a.last_login_at)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-secondary" data-reset-pw="${a.user_id}" title="Reset password"><i class="bi bi-key"></i> Reset PW</button>
+          ${a.is_active
+            ? `<button class="btn btn-sm btn-ghost" data-toggle-account="${a.user_id}" data-active="true" title="Deactivate"><i class="bi bi-slash-circle"></i> Deactivate</button>`
+            : `<button class="btn btn-sm btn-ghost" data-toggle-account="${a.user_id}" data-active="false" title="Activate"><i class="bi bi-check2-circle"></i> Activate</button>`}
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" class="cell-sub" style="text-align:center;padding:24px;">No accounts found.</td></tr>';
+}
+
+function wireAccountsActions() {
+  document.getElementById('accounts-role-filter').addEventListener('change', (e) => {
+    accountFilters.role = e.target.value;
+    renderAccounts();
+  });
+  const search = document.getElementById('accounts-search');
+  search.addEventListener('input', debounce(() => {
+    accountFilters.q = search.value;
+    renderAccounts();
+  }, 250));
+
+  document.getElementById('accounts-table-body').addEventListener('click', async (e) => {
+    const resetBtn = e.target.closest('[data-reset-pw]');
+    if (resetBtn) { openResetPassword(Number(resetBtn.dataset.resetPw)); return; }
+    const toggleBtn = e.target.closest('[data-toggle-account]');
+    if (toggleBtn) {
+      const uid = Number(toggleBtn.dataset.toggleAccount);
+      const isActive = toggleBtn.dataset.active === 'true';
+      const action = isActive ? 'deactivate' : 'activate';
+      if (!confirm(`Are you sure you want to ${action} this account?`)) return;
+      await api.superadmin.accounts.setStatus(uid, !isActive);
+      showToast(`Account ${action === 'deactivate' ? 'deactivated' : 'activated'}.`);
+      renderAccounts();
+    }
+  });
+
+  document.getElementById('accounts-new').addEventListener('click', () => {
+    document.getElementById('form-account').reset();
+    document.getElementById('account-specialty-wrap').hidden = true;
+    document.getElementById('account-error').hidden = true;
+    openModal('modal-account');
+  });
+  document.getElementById('account-role').addEventListener('change', (e) => {
+    document.getElementById('account-specialty-wrap').hidden = e.target.value !== 'technician';
+  });
+  document.getElementById('account-save').addEventListener('click', createAccount);
+  document.getElementById('resetpwd-save').addEventListener('click', resetAccountPassword);
+}
+
+// ---------- Technician Performance (superadmin) ----------
+let performanceData = [];
+let performanceSort = { key: 'completed_orders', dir: 'desc' };
+let performanceQuery = '';
+
+async function renderPerformance() {
+  performanceData = await api.superadmin.technicianPerformance();
+
+  const q = performanceQuery.trim().toLowerCase();
+  let rows = performanceData.filter((t) =>
+    !q || [t.full_name, t.email, t.specialty].some((v) => (v || '').toLowerCase().includes(q))
+  );
+
+  const cmp = performanceSort.key === 'full_name' || performanceSort.key === 'status'
+    ? (a, b) => String(a[performanceSort.key] || '').localeCompare(String(b[performanceSort.key] || ''))
+    : (a, b) => (a[performanceSort.key] || 0) - (b[performanceSort.key] || 0);
+  rows.sort((a, b) => (performanceSort.dir === 'asc' ? cmp(a, b) : cmp(b, a)));
+
+  document.getElementById('performance-count').textContent = `${rows.length} technician${rows.length === 1 ? '' : 's'}`;
+  document.getElementById('performance-table-body').innerHTML = rows.map((t) => `
+    <tr>
+      <td>
+        <div class="row-cell">
+          <div class="avatar-tiny" style="background:var(--blue-600);">${initials(t.full_name)}</div>
+          <div>
+            <div class="cell-main">${esc(t.full_name)}</div>
+            <div class="cell-sub">${esc(t.email ?? '')}${t.specialty ? ` · ${esc(t.specialty)}` : ''}</div>
+          </div>
+        </div>
+      </td>
+      <td>${t.status === 'active' ? badge('green', 'Active') : badge('grey', label(t.status))}</td>
+      <td><b>${t.total_orders}</b></td>
+      <td>${badge('emerald', String(t.completed_orders))}</td>
+      <td>${t.open_orders > 0 ? badge('amber', String(t.open_orders)) : badge('grey', '0')}</td>
+      <td>${t.overdue_orders > 0 ? badge('rose', String(t.overdue_orders)) : badge('grey', '0')}</td>
+      <td>
+        ${t.overdue_rate > 0 ? badge('rose', `${t.overdue_rate}%`) : badge('green', `${t.overdue_rate}%`)}
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" class="cell-sub" style="text-align:center;padding:24px;">No technicians found.</td></tr>';
+
+  updatePerformanceSortIndicators();
+}
+
+function updatePerformanceSortIndicators() {
+  document.querySelectorAll('#page-performance th.sortable').forEach((th) => {
+    th.classList.toggle('sort-asc', th.dataset.sort === performanceSort.key && performanceSort.dir === 'asc');
+    th.classList.toggle('sort-desc', th.dataset.sort === performanceSort.key && performanceSort.dir === 'desc');
+    const icon = th.querySelector('.bi');
+    if (icon) icon.className = `bi ${th.dataset.sort === performanceSort.key ? (performanceSort.dir === 'asc' ? 'bi-sort-numeric-down' : 'bi-sort-numeric-down-alt') : 'bi-arrow-down-up'}`;
+  });
+}
+
+function wirePerformanceActions() {
+  document.querySelectorAll('#page-performance th.sortable').forEach((th) => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.sort;
+      if (performanceSort.key === key) {
+        performanceSort.dir = performanceSort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        performanceSort.key = key;
+        performanceSort.dir = 'asc';
+      }
+      renderPerformance();
+    });
+  });
+
+  const search = document.getElementById('performance-search');
+  search.addEventListener('input', debounce(() => {
+    performanceQuery = search.value;
+    renderPerformance();
+  }, 250));
+
+  document.getElementById('performance-refresh').addEventListener('click', () => renderPerformance());
+}
+
+// ---------- Customer Insights (superadmin) ----------
+let insightsData = [];
+let insightsQuery = '';
+let insightsSort = 'spent';
+
+const INSIGHT_STATUS = {
+  in_progress: ['amber', 'Order In Progress'],
+  completed: ['green', 'All Completed'],
+  no_orders: ['grey', 'No Orders Yet'],
+};
+
+async function renderCustomerInsights() {
+  const data = await api.superadmin.customerInsights();
+  insightsData = data.customers;
+
+  const b = data.status_breakdown || { in_progress: 0, completed: 0, no_orders: 0 };
+  const totalCust = insightsData.length || 1;
+  document.getElementById('insights-breakdown').innerHTML = [
+    ['bi-arrow-repeat', 'var(--amber-50)', 'var(--amber-600)', 'Order In Progress', b.in_progress],
+    ['bi-check2-all', 'var(--emerald-50)', 'var(--emerald-600)', 'All Orders Completed', b.completed],
+    ['bi-person-dash', 'var(--gray-100)', 'var(--gray-500)', 'No Orders Yet', b.no_orders || 0],
+  ].map(([icon, bg, fg, labelText, value]) => `
+    <div class="kpi-card">
+      <div class="kpi-top"><div class="kpi-icon" style="background:${bg}; color:${fg};"><i class="bi ${icon}"></i></div></div>
+      <div class="kpi-label">${labelText}</div>
+      <div class="kpi-value">${value}</div>
+      <div class="kpi-sub">${Math.round((Number(value || 0) / totalCust) * 100)}% of customers</div>
+    </div>`).join('');
+
+  const q = insightsQuery.trim().toLowerCase();
+  let rows = insightsData.filter((c) =>
+    !q || [c.full_name, c.email, c.phone].some((v) => (v || '').toLowerCase().includes(q))
+  );
+
+  if (insightsSort === 'spent') {
+    rows.sort((a, b) => (b.total_spent ?? 0) - (a.total_spent ?? 0) || (b.total_orders ?? 0) - (a.total_orders ?? 0));
+  } else if (insightsSort === 'orders') {
+    rows.sort((a, b) => (b.total_orders ?? 0) - (a.total_orders ?? 0) || (b.total_spent ?? 0) - (a.total_spent ?? 0));
+  } else {
+    rows.sort((a, b) => String(a.full_name || '').localeCompare(String(b.full_name || '')));
+  }
+
+  document.getElementById('insights-count').textContent = `${rows.length} customer${rows.length === 1 ? '' : 's'}`;
+  document.getElementById('insights-table-body').innerHTML = rows.map((c, i) => {
+    const [statusKind, statusText] = INSIGHT_STATUS[c.status] || ['grey', c.status];
+    const rank = i === 0 ? '<span class="badge badge-purple">1st</span>'
+      : i === 1 ? '<span class="badge badge-blue">2nd</span>'
+        : i === 2 ? '<span class="badge badge-blue">3rd</span>' : '';
+    return `
+    <tr>
+      <td>
+        <div class="row-cell">
+          <div class="avatar-tiny" style="background:var(--blue-600);">${initials(c.full_name)}</div>
+          <div>
+            <div class="cell-main">${esc(c.full_name)} ${rank}</div>
+            <div class="cell-sub">${esc(c.email ?? c.phone ?? '')}</div>
+          </div>
+        </div>
+      </td>
+      <td>${badge(statusKind, statusText)}</td>
+      <td><b>${c.total_orders}</b></td>
+      <td><b>${peso(c.total_spent)}</b></td>
+      <td>${c.last_order_at ? dateFmt(c.last_order_at) : '<span class="cell-sub">—</span>'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" class="cell-sub" style="text-align:center;padding:24px;">No customers found.</td></tr>';
+}
+
+function wireCustomerInsightsActions() {
+  document.getElementById('insights-sort').addEventListener('change', (e) => {
+    insightsSort = e.target.value;
+    renderCustomerInsights();
+  });
+  const search = document.getElementById('insights-search');
+  search.addEventListener('input', debounce(() => {
+    insightsQuery = search.value;
+    renderCustomerInsights();
+  }, 250));
+  document.getElementById('insights-refresh').addEventListener('click', () => renderCustomerInsights());
+}
+
+async function createAccount() {
+  const form = document.getElementById('form-account');
+  if (!form.reportValidity()) return;
+  const box = document.getElementById('account-error');
+  const data = {
+    username: form.account_username.value.trim(),
+    password: form.account_password.value,
+    role: form.account_role.value,
+    name: form.account_name.value.trim(),
+    email: form.account_email.value.trim() || null,
+    phone: form.account_phone.value.trim() || null,
+    specialty: form.account_specialty.value.trim() || 'General',
+  };
+  if (data.password.length < 6) {
+    box.textContent = 'Password must be at least 6 characters.';
+    box.hidden = false;
+    return;
+  }
+  try {
+    await api.superadmin.accounts.create(data);
+    closeModal('modal-account');
+    form.reset();
+    showToast('Account created.');
+    renderAccounts();
+  } catch (err) {
+    box.textContent = err.message;
+    box.hidden = false;
+  }
+}
+
+function openResetPassword(userId) {
+  document.getElementById('resetpwd-current-account').dataset.userId = userId;
+  document.getElementById('resetpwd-error').hidden = true;
+  document.getElementById('resetpwd-password').value = '';
+  openModal('modal-resetpwd');
+}
+
+async function resetAccountPassword() {
+  const userId = Number(document.getElementById('resetpwd-current-account').dataset.userId);
+  const pw = document.getElementById('resetpwd-password').value;
+  const box = document.getElementById('resetpwd-error');
+  if (pw.length < 6) {
+    box.textContent = 'New password must be at least 6 characters.';
+    box.hidden = false;
+    return;
+  }
+  try {
+    await api.superadmin.accounts.resetPassword(userId, pw);
+    closeModal('modal-resetpwd');
+    showToast('Password reset successfully.');
+  } catch (err) {
+    box.textContent = err.message;
+    box.hidden = false;
+  }
 }
 
 async function renderTechnicianDashboard(orders, byStatus, openOrders) {
@@ -1622,12 +1970,71 @@ document.getElementById('invoice-edit-save')?.addEventListener('click', async ()
   } catch (err) { showToast(err.message, 'error'); }
 });
 
+// ---------- Appointment picker (staff create-order) ----------
+function initAppointmentPicker() {
+  const dateInput = document.getElementById('od-appt-date');
+  const slotSelect = document.getElementById('od-appt-slot');
+  const hidden = document.getElementById('od-appt-datetime');
+  if (!dateInput || !slotSelect || !hidden) return;
+
+  const today = new Date();
+  const iso = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  dateInput.min = iso;
+
+  let loadedSlots = [];
+
+  dateInput.addEventListener('change', async () => {
+    slotSelect.disabled = true;
+    slotSelect.innerHTML = '<option value="">Select a date first…</option>';
+    hidden.value = '';
+    if (!dateInput.value) return;
+    slotSelect.innerHTML = '<option value="">Loading slots…</option>';
+    try {
+      const av = await api.public.availability(dateInput.value);
+      loadedSlots = av.slots;
+      slotSelect.innerHTML = '';
+      if (!av.open) {
+        slotSelect.innerHTML = '<option value="">Closed — no slots</option>';
+        slotSelect.disabled = true;
+        return;
+      }
+      const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      av.slots.forEach((s, idx) => {
+        const d = new Date(s.start);
+        const past = d < todayLocal && dateInput.value <= iso;
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + (s.available ? '' : ' (booked)');
+        opt.disabled = !s.available || past;
+        slotSelect.appendChild(opt);
+      });
+      slotSelect.disabled = false;
+    } catch (err) {
+      slotSelect.innerHTML = '<option value="">Could not load slots</option>';
+      slotSelect.disabled = true;
+    }
+  });
+
+  slotSelect.addEventListener('change', () => {
+    const idx = Number(slotSelect.value);
+    if (Number.isInteger(idx) && loadedSlots[idx]) {
+      hidden.value = loadedSlots[idx].start;
+    } else {
+      hidden.value = '';
+    }
+  });
+}
+
 // ---------- Init ----------
 async function initApp() {
   const me = await api.auth.me();
   currentUser = me;
   buildNav();
   initOrderComboboxes();
+  initAppointmentPicker();
+  if (currentUser.role === 'superadmin') wireAccountsActions();
+  if (currentUser.role === 'superadmin') wirePerformanceActions();
+  if (currentUser.role === 'superadmin') wireCustomerInsightsActions();
   document.querySelectorAll('.nav-item').forEach((item) => {
     item.addEventListener('click', () => switchPage(item.dataset.page));
   });
@@ -1646,7 +2053,11 @@ async function initApp() {
   overlay.addEventListener('click', closeSidebar);
   document.querySelectorAll('.nav-item').forEach((n) => n.addEventListener('click', closeSidebar));
 
-  renderDashboard();
+  if (currentUser.role === 'superadmin') {
+    switchPage('system');
+  } else {
+    renderDashboard();
+  }
   loadNotifications();
 }
 
