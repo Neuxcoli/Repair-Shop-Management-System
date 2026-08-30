@@ -40,10 +40,17 @@ ALL_PERMISSIONS = {
     "settings.manage",
     "settings.view",
     "superadmin.view",
+    "portal.view",
+    "portal.manage",
 }
 
 # Spec §4 role-and-permission matrix.
 ROLE_PERMISSIONS = {
+    "customer": {
+        "portal.view",
+        "portal.manage",
+        "settings.view",
+    },
     "technician": {
         "repair_order.view",
         "repair_order.create",

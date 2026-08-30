@@ -1,9 +1,11 @@
 import os
+import re
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -68,9 +70,47 @@ def login(
     )
 
 
-@router.post("/register", response_model=schemas.LoginResponse)
+@router.post("/register", response_model=schemas.LoginResponse, status_code=201)
 def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
-    raise HTTPException(404, "Self-registration is not available.")
+    if not payload.full_name or not payload.email:
+        raise HTTPException(400, "Full name and email are required")
+    if len(payload.password) < 6:
+        raise HTTPException(400, "Password must be at least 6 characters")
+
+    email_key = payload.email.strip().lower()
+    existing = db.query(models.Customer).filter(
+        func.lower(models.Customer.email) == email_key,
+        models.Customer.deleted_at.is_(None),
+    ).first()
+    if existing:
+        raise HTTPException(400, "An account with this email already exists")
+
+    customer = models.Customer(
+        full_name=payload.full_name.strip(),
+        email=email_key or None,
+        phone=payload.phone,
+        address=payload.address,
+    )
+    db.add(customer)
+    db.flush()
+
+    base = re.sub(r"[^a-z0-9]+", "_", email_key.split("@")[0].strip("_")[:30]) or "customer"
+    username = base
+    suffix = 2
+    while db.query(models.User).filter(models.User.username == username).first():
+        username = f"{base}{suffix}"
+        suffix += 1
+
+    user = models.User(
+        username=username,
+        password=hash_password(payload.password),
+        role="customer",
+        customer_id=customer.id,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return schemas.LoginResponse(access_token=create_access_token(user), user=to_user_out(user))
 
 
 @router.get("/me", response_model=schemas.UserOut)

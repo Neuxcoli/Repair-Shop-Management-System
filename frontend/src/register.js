@@ -27,7 +27,7 @@ form.addEventListener('submit', async (e) => {
       password: form.password.value,
     });
     setAuth(data.access_token, data.user);
-    window.location.href = '/admin.html';
+    window.location.href = data.user.role === 'customer' ? '/customer.html' : '/admin.html';
   } catch (err) {
     errorEl.textContent = err.message || 'Registration failed.';
     errorEl.hidden = false;
