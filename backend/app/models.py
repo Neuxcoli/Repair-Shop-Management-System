@@ -140,6 +140,18 @@ class RepairOrder(Base):
         order_by="RepairOrderStatusHistory.id",
         cascade="all, delete-orphan",
     )
+    additional_cost_requests = relationship(
+        "AdditionalCostRequest",
+        back_populates="repair_order",
+        order_by="AdditionalCostRequest.id",
+        cascade="all, delete-orphan",
+    )
+    photos = relationship(
+        "OrderPhoto",
+        back_populates="repair_order",
+        order_by="OrderPhoto.id",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def parts_total(self) -> float:
@@ -266,3 +278,37 @@ class ContactMessage(Base):
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AdditionalCostRequestStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    declined = "declined"
+
+
+class AdditionalCostRequest(Base):
+    __tablename__ = "repairshop_additional_cost_requests"
+
+    id = Column(Integer, primary_key=True)
+    repair_order_id = Column(Integer, ForeignKey("repairshop_repair_orders.id", ondelete="CASCADE"), nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
+    reason = Column(Text)
+    status = Column(Enum(AdditionalCostRequestStatus, name="additional_cost_status"), default=AdditionalCostRequestStatus.pending)
+    created_by = Column(Integer, ForeignKey("repairshop_users.id", ondelete="SET NULL"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    responded_at = Column(DateTime(timezone=True))
+
+    repair_order = relationship("RepairOrder", back_populates="additional_cost_requests")
+
+
+class OrderPhoto(Base):
+    __tablename__ = "repairshop_order_photos"
+
+    id = Column(Integer, primary_key=True)
+    repair_order_id = Column(Integer, ForeignKey("repairshop_repair_orders.id", ondelete="CASCADE"), nullable=False)
+    object_key = Column(String(500), nullable=False)
+    caption = Column(String(200))
+    uploaded_by = Column(Integer, ForeignKey("repairshop_users.id", ondelete="SET NULL"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    repair_order = relationship("RepairOrder", back_populates="photos")

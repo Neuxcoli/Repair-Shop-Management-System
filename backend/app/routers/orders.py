@@ -1,6 +1,6 @@
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -341,3 +341,130 @@ def remove_order_part(
         part.qty_on_hand += line.quantity
     db.delete(line)
     db.commit()
+
+
+# ---------- Additional-cost / quote approval (staff submits) ----------
+@router.get("/{order_id}/additional-costs", response_model=list[schemas.AdditionalCostRequestOut])
+def list_additional_costs(
+    order_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission("repair_order.view", "repair_order.view.all")),
+):
+    order = _get_order_or_404(order_id, db)
+    _check_technician_access(order, user)
+    return (
+        db.query(models.AdditionalCostRequest)
+        .filter(models.AdditionalCostRequest.repair_order_id == order_id)
+        .order_by(models.AdditionalCostRequest.id.desc())
+        .all()
+    )
+
+
+@router.post(
+    "/{order_id}/additional-costs",
+    response_model=schemas.AdditionalCostRequestOut,
+    status_code=201,
+)
+def create_additional_cost(
+    order_id: int,
+    payload: schemas.AdditionalCostRequestCreate,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission("repair_order.diagnose", "repair_order.approve")),
+):
+    order = _get_order_or_404(order_id, db)
+    _check_technician_access(order, user)
+    if payload.amount is None or float(payload.amount) <= 0:
+        raise HTTPException(400, "Amount must be positive")
+    pending = (
+        db.query(models.AdditionalCostRequest)
+        .filter(
+            models.AdditionalCostRequest.repair_order_id == order_id,
+            models.AdditionalCostRequest.status == models.AdditionalCostRequestStatus.pending,
+        )
+        .first()
+    )
+    if pending:
+        raise HTTPException(409, "There is already a pending approval for this order")
+    req = models.AdditionalCostRequest(
+        repair_order_id=order_id, amount=payload.amount, reason=payload.reason, created_by=user.id
+    )
+    db.add(req)
+    _record_status_change(
+        db, order, user, order.status, note=f"Additional cost of {payload.amount} requested for approval",
+        from_status=order.status,
+    )
+    db.commit()
+    db.refresh(req)
+    return req
+
+
+# ---------- Order photos (staff uploads) ----------
+@router.get("/{order_id}/photos", response_model=list[schemas.OrderPhotoOut])
+def list_photos(
+    order_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission("repair_order.view", "repair_order.view.all")),
+):
+    order = _get_order_or_404(order_id, db)
+    _check_technician_access(order, user)
+    from ..storage import is_configured
+
+    photos = (
+        db.query(models.OrderPhoto)
+        .filter(models.OrderPhoto.repair_order_id == order_id)
+        .order_by(models.OrderPhoto.id.desc())
+        .all()
+    )
+    result = []
+    for p in photos:
+        key = p.object_key or ""
+        url = key if key.startswith("http") else f"/api/uploads/{key.lstrip('/')}"
+        result.append(schemas.OrderPhotoOut(
+            id=p.id,
+            repair_order_id=p.repair_order_id,
+            object_key=p.object_key,
+            caption=p.caption,
+            created_at=p.created_at,
+            url=url,
+        ))
+    return result
+
+
+@router.post(
+    "/{order_id}/photos",
+    response_model=schemas.OrderPhotoOut,
+    status_code=201,
+)
+async def upload_photo(
+    order_id: int,
+    file: UploadFile = File(...),
+    caption: str = Form(default=""),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission("repair_order.diagnose", "repair_order.parts.add")),
+):
+    order = _get_order_or_404(order_id, db)
+    _check_technician_access(order, user)
+    data = await file.read()
+    if len(data) > 8 * 1024 * 1024:
+        raise HTTPException(400, "Image too large (max 8MB)")
+    from ..storage import build_key, store
+
+    key = build_key(order_id, file.filename or "photo.jpg")
+    stored = store(key, data)
+    photo = models.OrderPhoto(
+        repair_order_id=order_id,
+        object_key=stored,
+        caption=caption or None,
+        uploaded_by=user.id,
+    )
+    db.add(photo)
+    db.commit()
+    db.refresh(photo)
+    return schemas.OrderPhotoOut(
+        id=photo.id,
+        repair_order_id=photo.repair_order_id,
+        object_key=photo.object_key,
+        caption=photo.caption,
+        created_at=photo.created_at,
+        url=f"/api/uploads/{key.lstrip('/')}",
+    )

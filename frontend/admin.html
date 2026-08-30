@@ -609,6 +609,44 @@
       </div>
 
       <div class="detail-section">
+        <div class="detail-section-title">Additional Work Approval</div>
+        <div id="od-additional-costs"></div>
+        <div class="field-row" id="od-add-cost" hidden>
+          <div class="field" style="max-width:140px;">
+            <label>Amount</label>
+            <input class="input" id="od-ac-amount" type="number" min="0.01" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label>Reason</label>
+            <input class="input" id="od-ac-reason" placeholder="e.g. found another issue during repair">
+          </div>
+          <div class="field" style="max-width:120px;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" id="od-ac-submit">Request Approval</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Photos</div>
+        <div id="od-photos" class="photo-grid" style="margin:0 0 10px 0;"></div>
+        <div class="field-row" id="od-add-photo" hidden>
+          <div class="field" style="flex:1;">
+            <label>Upload photo (damage / before-after)</label>
+            <input class="input" type="file" id="od-photo-file" accept="image/*">
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Caption</label>
+            <input class="input" id="od-photo-caption" placeholder="e.g. damage found">
+          </div>
+          <div class="field" style="max-width:110px;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" id="od-photo-upload">Upload</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
         <div class="detail-section-title">Status History</div>
         <div class="status-timeline" id="od-status-history"></div>
       </div>

@@ -78,6 +78,7 @@ export const api = {
     changePassword: (data) => request('/auth/password', { method: 'PUT', body: JSON.stringify(data) }),
   },
   portal: {
+    me: () => request('/portal/me'),
     items: {
       list: () => request('/portal/items'),
       create: (data) => request('/portal/items', { method: 'POST', body: JSON.stringify(data) }),
@@ -87,6 +88,15 @@ export const api = {
       get: (id) => request(`/portal/orders/${id}`),
       create: (data) => request('/portal/orders', { method: 'POST', body: JSON.stringify(data) }),
       cancel: (id) => request(`/portal/orders/${id}/cancel`, { method: 'POST' }),
+      photos: (id) => request(`/portal/orders/${id}/photos`),
+    },
+    additionalCosts: {
+      list: () => request('/portal/additional-costs'),
+      respond: (id, status) => request(`/portal/additional-costs/${id}/respond`, { method: 'POST', body: JSON.stringify({ status }) }),
+    },
+    invoices: {
+      list: () => request('/portal/invoices'),
+      get: (id) => request(`/portal/invoices/${id}`),
     },
   },
   dashboard: {
@@ -127,6 +137,27 @@ export const api = {
     remove: (id) => request(`/orders/${id}`, { method: 'DELETE' }),
     addPart: (id, data) => request(`/orders/${id}/parts`, { method: 'POST', body: JSON.stringify(data) }),
     removePart: (id, lineId) => request(`/orders/${id}/parts/${lineId}`, { method: 'DELETE' }),
+    photos: {
+      list: (id) => request(`/orders/${id}/photos`),
+      upload: async (id, formData) => {
+        const token = getToken();
+        const res = await fetch(`${BASE}/orders/${id}/photos`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        });
+        if (!res.ok) {
+          let detail = `${res.status} ${res.statusText}`;
+          try { const b = await res.json(); if (b?.detail) detail = b.detail; } catch {}
+          throw new Error(detail);
+        }
+        return res.json();
+      },
+    },
+    additionalCosts: {
+      list: (id) => request(`/orders/${id}/additional-costs`),
+      create: (id, data) => request(`/orders/${id}/additional-costs`, { method: 'POST', body: JSON.stringify(data) }),
+    },
   },
   invoices: {
     list: (params = {}) => {

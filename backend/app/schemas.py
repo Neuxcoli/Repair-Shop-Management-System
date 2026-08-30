@@ -277,11 +277,6 @@ class PortalItemCreate(BaseModel):
     item_type: Optional[str] = None
 
 
-class PortalOrderCreate(BaseModel):
-    item_id: int
-    problem_description: Optional[str] = None
-
-
 # ---------- Dashboard ----------
 class DashboardSummary(BaseModel):
     open_orders: int
@@ -368,3 +363,112 @@ class TrackOrderOut(BaseModel):
     warranty_notes: Optional[str] = None
     parts: list[TrackPartOut] = Field(default_factory=list)
     invoice: Optional[TrackInvoiceOut] = None
+
+
+# ---------- Additional-cost (quote approval) ----------
+class AdditionalCostRequestOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    repair_order_id: int
+    amount: float
+    reason: Optional[str] = None
+    status: str
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+
+
+class AdditionalCostRequestCreate(BaseModel):
+    amount: float
+    reason: Optional[str] = None
+
+
+class AdditionalCostRespond(BaseModel):
+    status: str  # "approved" | "declined"
+
+
+# ---------- Order photos ----------
+class OrderPhotoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    repair_order_id: int
+    object_key: str
+    caption: Optional[str] = None
+    created_at: datetime
+    url: Optional[str] = None
+
+
+# ---------- Customer portal invoices ----------
+class PortalInvoiceOut(BaseModel):
+    id: int
+    invoice_number: str
+    repair_order_id: int
+    total: float
+    amount_paid: float
+    balance: float
+    status: str
+    issued_at: datetime
+    paid_at: Optional[datetime] = None
+    ro_number: Optional[str] = None
+    order_date: Optional[datetime] = None
+
+
+class PortalInvoiceLineOut(BaseModel):
+    description: str
+    quantity: float
+    unit_price: float
+    line_total: float
+
+
+class PortalInvoiceDetailOut(PortalInvoiceOut):
+    line_items: list[PortalInvoiceLineOut] = Field(default_factory=list)
+    order_item_description: Optional[str] = None
+
+
+class PortalOrderCreate(BaseModel):
+    type: str = "existing"  # "existing" | "new"
+    item_id: Optional[int] = None
+    item_description: Optional[str] = None
+    item_identifier: Optional[str] = None
+    problem_description: Optional[str] = None
+
+
+class PortalOrderListOut(BaseModel):
+    id: int
+    ro_number: str
+    status: str
+    priority: str
+    tracking_token: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    item_description: Optional[str] = None
+    item_identifier: Optional[str] = None
+
+
+class PortalOrderDetailOut(BaseModel):
+    id: int
+    ro_number: str
+    status: str
+    priority: str
+    tracking_token: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime] = None
+    item_description: Optional[str] = None
+    item_identifier: Optional[str] = None
+    problem_description: Optional[str] = None
+    diagnosis: Optional[str] = None
+    warranty_days: int = 0
+    warranty_notes: Optional[str] = None
+    labor_cost: float = 0
+    parts_total: float = 0
+    quote_total: float = 0
+    parts: list[PortalLineOut] = Field(default_factory=list)
+    status_history: list[StatusHistoryOut] = Field(default_factory=list)
+    photos: list[OrderPhotoOut] = Field(default_factory=list)
+
+
+class PortalLineOut(BaseModel):
+    name: str
+    quantity: int
+    unit_price: float
+    line_total: float

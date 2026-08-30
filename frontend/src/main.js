@@ -9,6 +9,8 @@ if (!currentUser || !localStorage.getItem('rs_token')) {
   localStorage.removeItem('rs_token');
   localStorage.removeItem('rs_user');
   window.location.href = '/staff-login.html';
+} else if (currentUser.role === 'customer') {
+  window.location.href = '/customer.html';
 }
 
 const ROLE_LABEL = {
@@ -849,6 +851,8 @@ async function openOrderDetail(id) {
   await renderOrderParts(order);
   await renderOrderInvoice(order);
   renderOrderHistory(order);
+  await renderAdditionalCosts(order);
+  await renderOrderPhotos(order);
   openModal('modal-order-detail');
 }
 
@@ -871,6 +875,83 @@ function renderOrderHistory(order) {
 
 async function refreshOrderDetail() {
   if (activeOrderId) await openOrderDetail(activeOrderId);
+}
+
+// ---------- Additional-cost / quote approval (staff) ----------
+async function renderAdditionalCosts(order) {
+  const container = document.getElementById('od-additional-costs');
+  let reqs = [];
+  try { reqs = await api.orders.additionalCosts.list(order.id); } catch (e) {}
+
+  if (reqs.length) {
+    container.innerHTML = reqs.map((r) => `
+      <div class="order-card" style="border:1px solid var(--gray-200);border-radius:10px;margin-bottom:8px;">
+        <div class="order-card-top">
+          <b>${peso(r.amount)}</b>
+          ${badge(
+            r.status === 'pending' ? 'amber' : r.status === 'approved' ? 'green' : 'rose',
+            label(r.status)
+          )}
+        </div>
+        <div class="cell-sub" style="margin-top:4px;">${esc(r.reason || '—')}</div>
+      </div>`).join('');
+  } else {
+    container.innerHTML = '<div class="cell-sub">No additional cost requests.</div>';
+  }
+
+  const canRequest = can('repair_order.diagnose') || can('repair_order.approve');
+  const addSection = document.getElementById('od-add-cost');
+  addSection.hidden = !canRequest || reqs.some((r) => r.status === 'pending');
+
+  if (canRequest) {
+    const submitBtn = document.getElementById('od-ac-submit');
+    submitBtn.onclick = async () => {
+      const amount = Number(document.getElementById('od-ac-amount').value);
+      const reason = document.getElementById('od-ac-reason').value.trim();
+      if (!amount || amount <= 0) { showToast('Enter a valid amount.', 'error'); return; }
+      if (!reason) { showToast('Add a reason for the additional work.', 'error'); return; }
+      try {
+        await api.orders.additionalCosts.create(order.id, { amount, reason });
+        document.getElementById('od-ac-amount').value = '';
+        document.getElementById('od-ac-reason').value = '';
+        showToast('Approval request sent to customer.');
+        await renderAdditionalCosts(order);
+      } catch (err) { showToast(err.message, 'error'); }
+    };
+  }
+}
+
+// ---------- Photos (staff) ----------
+async function renderOrderPhotos(order) {
+  const grid = document.getElementById('od-photos');
+  let photos = [];
+  try { photos = await api.orders.photos.list(order.id); } catch (e) {}
+
+  grid.innerHTML = photos.length ? photos.map((p) => `
+    <div class="photo-cell">
+      <a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt=""></a>
+      ${p.caption ? `<div class="photo-caption">${esc(p.caption)}</div>` : ''}
+    </div>`).join('') : '<div class="cell-sub">No photos uploaded.</div>';
+
+  const canUpload = can('repair_order.diagnose') || can('repair_order.parts.add');
+  document.getElementById('od-add-photo').hidden = !canUpload;
+  if (canUpload) {
+    document.getElementById('od-photo-upload').onclick = async () => {
+      const file = document.getElementById('od-photo-file').files[0];
+      if (!file) { showToast('Choose an image first.', 'error'); return; }
+      const form = new FormData();
+      form.append('file', file);
+      const caption = document.getElementById('od-photo-caption').value.trim();
+      if (caption) form.append('caption', caption);
+      try {
+        await api.orders.photos.upload(order.id, form);
+        document.getElementById('od-photo-file').value = '';
+        document.getElementById('od-photo-caption').value = '';
+        showToast('Photo uploaded.');
+        await renderOrderPhotos(order);
+      } catch (err) { showToast(err.message, 'error'); }
+    };
+  }
 }
 
 async function renderOrderParts(order) {

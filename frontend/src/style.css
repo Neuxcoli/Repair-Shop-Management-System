@@ -539,9 +539,19 @@ tbody tr:hover{ background:var(--gray-50); }
 .portal{ min-height:100vh; background:var(--gray-100); }
 .portal-topbar{
   height:64px; background:var(--slate-900); display:flex; align-items:center;
-  justify-content:space-between; padding:0 28px;
+  justify-content:space-between; padding:0 28px; gap:16px;
 }
 .portal-brand{ display:flex; align-items:center; gap:12px; }
+.portal-brand-name{ font-weight:700; font-size:14.5px; color:#fff; line-height:1.1; }
+.portal-brand-sub{ font-size:10px; letter-spacing:.14em; color:var(--gray-400); margin-top:2px; }
+.portal-nav{ display:flex; gap:4px; }
+.portal-nav-item{
+  background:none; border:none; color:var(--gray-300); font-size:13px; font-weight:600;
+  padding:8px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  transition:background .12s, color .12s;
+}
+.portal-nav-item:hover{ background:rgba(255,255,255,.06); color:#fff; }
+.portal-nav-item.active{ background:var(--blue-600); color:#fff; }
 .portal-user{ display:flex; align-items:center; gap:12px; }
 .portal-name{ color:#fff; font-weight:600; font-size:14px; }
 .portal-content{ padding:28px 32px 60px 32px; max-width:1100px; margin:0 auto; }
@@ -551,9 +561,26 @@ tbody tr:hover{ background:var(--gray-50); }
 .order-card{ padding:14px 20px; border-bottom:1px solid var(--gray-100); }
 .order-card-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
 .order-card-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+/* Quote approval card */
+.approval-card{ border:1px solid var(--amber-200); background:var(--amber-50); border-radius:12px; padding:16px 18px; margin-bottom:20px; }
+.approval-title{ font-size:14px; font-weight:700; color:var(--gray-900); display:flex; align-items:center; gap:8px; }
+.approval-reason{ font-size:13px; color:var(--gray-700); margin:8px 0 4px 0; }
+.approval-actions{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+
+/* Photo viewer */
+.photo-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:8px; }
+.photo-cell{ background:#fff; border:1px solid var(--gray-200); border-radius:10px; overflow:hidden; }
+.photo-cell img{ width:100%; height:140px; object-fit:cover; display:block; background:var(--gray-100); }
+.photo-caption{ padding:6px 10px; font-size:11.5px; color:var(--gray-500); }
+
+/* Portal empty helpers */
+.portal-empty{ padding:24px 20px; text-align:center; color:var(--gray-500); font-size:13px; }
+
 @media (max-width:900px){
   .customer-grid{ grid-template-columns:1fr; }
-  .portal-topbar{ padding:0 16px; }
+  .portal-topbar{ padding:0 16px; flex-wrap:wrap; height:auto; padding-top:12px; padding-bottom:12px; }
+  .portal-nav{ order:3; width:100%; justify-content:flex-start; flex-wrap:wrap; }
   .portal-content{ padding:20px 16px 60px 16px; }
 }
 
@@ -624,4 +651,26 @@ tbody tr:hover{ background:var(--gray-50); }
   .panel-header{ padding:14px 16px; }
   .btn{ height:34px; padding:0 12px; font-size:13px; }
   .tech-job-row{ padding:12px 16px; }
+}
+
+/* ── PRINT: invoice / receipt ── */
+.invoice-print{ font-size:13px; color:#111; }
+.invoice-print-title{ font-size:20px; font-weight:800; margin:0 0 2px 0; }
+.invoice-print-meta{ color:#555; margin:0 0 18px 0; font-size:12px; }
+.invoice-print-head{ display:flex; justify-content:space-between; gap:16px; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #ddd; }
+.invoice-print-head .shop{ font-size:15px; font-weight:700; }
+.invoice-print table{ width:100%; border-collapse:collapse; margin:6px 0 12px 0; }
+.invoice-print th, .invoice-print td{ text-align:left; padding:7px 8px; border-bottom:1px solid #e5e7eb; font-size:12.5px; }
+.invoice-print th{ color:#333; font-weight:700; }
+.invoice-print .num{ text-align:right; }
+.invoice-print .totals{ margin-left:auto; width:260px; }
+.invoice-print .totals div{ display:flex; justify-content:space-between; padding:4px 0; }
+.invoice-print .totals .grand{ font-weight:800; border-top:2px solid #111; margin-top:6px; padding-top:8px; }
+.invoice-print .status-pill{ display:inline-block; padding:3px 10px; border-radius:9999px; font-size:11px; font-weight:700; }
+
+@media print{
+  body *{ visibility:hidden; }
+  #print-area, #print-area *{ visibility:visible; }
+  #print-area{ position:absolute; left:0; top:0; width:100%; }
+  .modal-close, .modal-header button{ display:none !important; }
 }
