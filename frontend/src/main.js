@@ -25,6 +25,7 @@ const NAV = {
       ['orders', 'bi-clipboard2-check', 'Repair Orders'],
       ['customers', 'bi-people', 'Customers'],
       ['technicians', 'bi-person-badge', 'Technicians'],
+      ['messages', 'bi-envelope', 'Messages'],
       ['settings', 'bi-gear', 'Settings'],
     ],
     Operations: [
@@ -292,6 +293,7 @@ function loadPage(page) {
     invoices: renderInvoices,
     settings: renderSettings,
     pricelist: renderPriceList,
+    messages: renderMessages,
   };
   loaders[page]?.();
 }
@@ -1383,6 +1385,52 @@ async function renderPriceList() {
         <div><div class="detail-label">Currency</div><div class="detail-value">${cur}</div></div>
       </div>
     </div>`;
+}
+
+// ---------- Messages ----------
+async function renderMessages() {
+  const tbody = document.getElementById('messages-tbody');
+  try {
+    const msgs = await api.contact.list();
+    if (!msgs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:24px;">No messages yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = msgs.map((m) => `
+      <tr style="${m.is_read ? '' : 'font-weight:600;'}">
+        <td>
+          <div>${esc(m.full_name)}${m.is_read ? '' : ' <span style="color:#E11D48;font-size:11px;">● NEW</span>'}</div>
+          <div class="cell-sub">${esc(m.email)}${m.phone ? ` &middot; ${esc(m.phone)}` : ''}</div>
+        </td>
+        <td>${esc(m.subject || '—')}</td>
+        <td style="max-width:300px;"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.message)}</div></td>
+        <td class="cell-sub">${dateFmt(m.created_at)}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" data-view-msg="${m.id}" data-msg='${esc(JSON.stringify(m).replace(/'/g, "&#39;"))}'>View</button>
+          <button class="btn btn-delete btn-sm" data-del-msg="${m.id}">Delete</button>
+        </td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('[data-view-msg]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const m = JSON.parse(b.dataset.msg);
+        showToast(`${m.full_name} · ${m.email}${m.phone ? ' · ' + m.phone : ''}\n\n${m.message}`, 'info');
+        api.contact.markRead(m.id).catch(() => {});
+      });
+    });
+    tbody.querySelectorAll('[data-del-msg]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        if (!confirm('Delete this message?')) return;
+        try {
+          await api.contact.delete(b.dataset.delMsg);
+          showToast('Message deleted.');
+          renderMessages();
+        } catch (err) { showToast(err.message, 'error'); }
+      });
+    });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#BE123C;padding:24px;">Could not load messages.</td></tr>`;
+  }
 }
 
 // ---------- Settings ----------

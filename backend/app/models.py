@@ -1,7 +1,7 @@
 import enum
 
 from sqlalchemy import (
-    Column, Integer, String, Text, Numeric, ForeignKey, DateTime, Enum, UniqueConstraint
+    Column, Integer, String, Text, Numeric, ForeignKey, DateTime, Enum, UniqueConstraint, Boolean
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -253,3 +253,16 @@ class User(Base):
         if self.technician:
             return self.technician.full_name
         return self.username
+
+
+class ContactMessage(Base):
+    __tablename__ = "repairshop_contact_messages"
+
+    id = Column(Integer, primary_key=True)
+    full_name = Column(String(120), nullable=False)
+    email = Column(String(200), nullable=False)
+    phone = Column(String(50))
+    subject = Column(String(200))
+    message = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

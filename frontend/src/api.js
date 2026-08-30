@@ -146,4 +146,10 @@ export const api = {
     get: () => request('/settings'),
     update: (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) }),
   },
+  contact: {
+    create: (data) => request('/contact', { method: 'POST', body: JSON.stringify(data) }),
+    list: () => request('/contact'),
+    markRead: (id) => request(`/contact/${id}/read`, { method: 'PATCH' }),
+    delete: (id) => request(`/contact/${id}`, { method: 'DELETE' }),
+  },
 };

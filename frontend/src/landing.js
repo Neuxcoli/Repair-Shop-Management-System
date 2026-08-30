@@ -1,5 +1,6 @@
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './style.css';
+import { showToast } from './ui.js';
 
 const hamburger = document.getElementById('hamburger');
 const mobileMenu = document.getElementById('mobile-menu');
@@ -22,11 +23,30 @@ document.querySelectorAll('.mobile-menu-link, .site-nav-link').forEach((a) => {
   });
 });
 
-document.getElementById('contact-form').addEventListener('submit', (e) => {
+document.getElementById('contact-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
   if (!form.reportValidity()) return;
-  document.getElementById('contact-success').hidden = false;
-  document.getElementById('contact-submit').disabled = true;
-  form.reset();
+
+  const data = Object.fromEntries(new FormData(form).entries());
+  const btn = document.getElementById('contact-submit');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to send');
+    document.getElementById('contact-success').hidden = false;
+    form.reset();
+    showToast('Message sent successfully!');
+  } catch (err) {
+    showToast('Failed to send message. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Message';
+  }
 });
