@@ -33,6 +33,7 @@ const NAV = {
     ],
     Operations: [
       ['inventory', 'bi-box-seam', 'Inventory'],
+      ['parts-orders', 'bi-cart3', 'Parts Orders'],
       ['invoices', 'bi-receipt', 'Invoices'],
     ],
   },
@@ -53,6 +54,7 @@ const NAV = {
     ],
     Operations: [
       ['inventory', 'bi-box-seam', 'Inventory'],
+      ['parts-orders', 'bi-cart3', 'Parts Orders'],
       ['invoices', 'bi-receipt', 'Invoices'],
     ],
   },
@@ -320,6 +322,7 @@ function loadPage(page) {
     technicians: renderTechnicians,
     inventory: renderParts,
     invoices: renderInvoices,
+    'parts-orders': renderPartsOrders,
     settings: renderSettings,
     pricelist: renderPriceList,
     messages: renderMessages,
@@ -441,10 +444,12 @@ document.querySelectorAll('[data-submit-form]').forEach((btn) => {
         const partData = {
           sku: data.sku,
           name: data.name,
+          description: data.description || null,
           qty_on_hand: Number(data.qty_on_hand || 0),
           reorder_threshold: Number(data.reorder_threshold || 5),
           unit_cost: Number(data.unit_cost || 0),
           unit_price: Number(data.unit_price || 0),
+          available_for_purchase: data.available_for_purchase ? true : false,
         };
         const wasEditingPart = !!editingPartId;
         if (editingPartId) {
@@ -1142,6 +1147,7 @@ let customerCombobox = null;
 let itemCombobox = null;
 let lastTechnicians = [];
 let lastParts = [];
+let lastPartsOrders = [];
 
 async function openOrderDetail(id) {
   activeOrderId = id;
@@ -1582,6 +1588,8 @@ function openEditPart(id) {
   form.reorder_threshold.value = p.reorder_threshold ?? 5;
   form.unit_cost.value = p.unit_cost ?? 0;
   form.unit_price.value = p.unit_price ?? 0;
+  form.description.value = p.description ?? '';
+  form.available_for_purchase.checked = !!p.available_for_purchase;
   document.querySelector('#modal-part .modal-title').textContent = 'Edit Part';
   document.querySelector('#modal-part [data-submit-form]').textContent = 'Save Changes';
   openModal('modal-part');
@@ -1640,6 +1648,7 @@ async function renderParts() {
     const stockBadge = p.qty_on_hand === 0 || p.qty_on_hand <= p.reorder_threshold / 2
       ? badge('rose', 'Critical')
       : p.qty_on_hand <= p.reorder_threshold ? badge('amber', 'Low Stock') : badge('green', 'In Stock');
+    const catalogBadge = p.available_for_purchase ? badge('blue', 'Listed') : badge('gray', 'Internal');
     return `
     <tr>
       <td>${p.sku}</td>
@@ -1648,14 +1657,95 @@ async function renderParts() {
       <td>${peso(p.unit_cost)}</td>
       <td>${peso(p.unit_price)}</td>
       <td>${stockBadge}</td>
+      <td>${catalogBadge}</td>
       ${canManage ? `<td>${kebab(p.id, 'part')}</td>` : ''}
     </tr>`;
-  }).join('') || `<tr class="empty-row"><td colspan="${canManage ? 7 : 6}">No parts found.</td></tr>`;
+  }).join('') || `<tr class="empty-row"><td colspan="${canManage ? 8 : 7}">No parts found.</td></tr>`;
 
   document.getElementById('parts-count').textContent = `Showing ${parts.length} part(s)`;
   if (canManage) wireKebabs();
 }
 document.getElementById('parts-search').addEventListener('input', debounce(renderParts));
+
+// ---------- Parts Orders (fulfillment) ----------
+const PARTS_ORDER_BADGE = { pending: 'amber', fulfilled: 'green', cancelled: 'gray' };
+
+async function renderPartsOrders() {
+  const status = document.getElementById('parts-orders-status-filter')?.value || '';
+  const orders = await api.partsOrders.list(status ? { status } : {});
+  lastPartsOrders = orders;
+
+  document.getElementById('parts-orders-table-body').innerHTML = orders.map((o) => `
+    <tr>
+      <td><b>${o.order_number}</b></td>
+      <td>${o.customer?.full_name ?? '—'}</td>
+      <td>${o.items.map((i) => `${i.quantity}× ${i.name}`).join(', ') || '—'}</td>
+      <td>${peso(o.total)}</td>
+      <td>${dateFmt(o.created_at)}</td>
+      <td>${badge(PARTS_ORDER_BADGE[o.status], label(o.status))}</td>
+      <td>
+        <div class="kebab-wrap">
+          <button class="kebab-btn" aria-label="Actions"><i class="bi bi-three-dots-vertical"></i></button>
+          <div class="kebab-menu">
+            <button class="kebab-item" data-po-action="view" data-po-id="${o.id}"><i class="bi bi-eye"></i> View</button>
+            ${o.status === 'pending' ? `<button class="kebab-item" data-po-action="fulfill" data-po-id="${o.id}"><i class="bi bi-check2-circle"></i> Mark Fulfilled</button>` : ''}
+          </div>
+        </div>
+      </td>
+    </tr>
+  `).join('') || `<tr class="empty-row"><td colspan="7">No parts orders found.</td></tr>`;
+
+  document.getElementById('parts-orders-count').textContent = `Showing ${orders.length} parts order(s)`;
+  document.querySelectorAll('[data-po-action]').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.poAction;
+      const id = Number(btn.dataset.poId);
+      document.querySelectorAll('.kebab-menu.open').forEach((m) => m.classList.remove('open'));
+      if (action === 'view') openPartsOrderDetail(id);
+      else if (action === 'fulfill') await fulfillPartsOrder(id);
+    });
+  });
+  wireKebabs();
+}
+
+function openPartsOrderDetail(id) {
+  const o = lastPartsOrders.find((x) => x.id === id);
+  if (!o) return;
+  document.getElementById('po-detail-title').textContent = o.order_number;
+  const items = o.items.map((i) => `
+    <tr>
+      <td>${i.name}${i.sku ? ` <span class="cell-sub">(${i.sku})</span>` : ''}</td>
+      <td>${i.quantity}</td>
+      <td>${peso(i.unit_price)}</td>
+      <td>${peso(i.line_total)}</td>
+    </tr>`).join('');
+  document.getElementById('po-detail-body').innerHTML = `
+    <div class="detail-grid">
+      <div><div class="cell-sub">Status</div><div>${badge(PARTS_ORDER_BADGE[o.status], label(o.status))}</div></div>
+      <div><div class="cell-sub">Customer</div><div>${o.customer?.full_name ?? '—'}</div></div>
+      <div><div class="cell-sub">Placed</div><div>${dateFmt(o.created_at)}</div></div>
+      <div><div class="cell-sub">Fulfilled</div><div>${o.fulfilled_at ? dateFmt(o.fulfilled_at) : '—'}</div></div>
+    </div>
+    ${o.notes ? `<div class="detail-row"><div class="cell-sub">Notes</div><div>${esc(o.notes)}</div></div>` : ''}
+    <table>
+      <thead><tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead>
+      <tbody>${items}</tbody>
+      <tfoot><tr><td colspan="3"><b>Total</b></td><td><b>${peso(o.total)}</b></td></tr></tfoot>
+    </table>`;
+  openModal('modal-parts-order');
+}
+
+async function fulfillPartsOrder(id) {
+  if (!confirm('Mark this parts order as fulfilled?')) return;
+  try {
+    await api.partsOrders.fulfill(id);
+    loadPage('parts-orders');
+    showToast('Parts order marked fulfilled. Stock has already been deducted.');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+document.getElementById('parts-orders-status-filter')?.addEventListener('change', renderPartsOrders);
 
 // ---------- Invoices ----------
 async function renderInvoices() {

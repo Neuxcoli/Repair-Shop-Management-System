@@ -25,6 +25,7 @@
       <button class="nav-item active" data-view="repairs"><i class="bi bi-clipboard2-check"></i> My Repairs</button>
       <button class="nav-item" data-view="track"><i class="bi bi-geo-alt"></i> Track Repair</button>
       <button class="nav-item" data-view="invoices"><i class="bi bi-receipt"></i> Invoices</button>
+      <button class="nav-item" data-view="store"><i class="bi bi-cart3"></i> Parts Shop</button>
       <button class="nav-item" data-view="request"><i class="bi bi-plus-circle"></i> Book Repair</button>
     </nav>
   </aside>
@@ -168,6 +169,44 @@
       </div>
     </div>
   </div>
+
+  <!-- ============ PARTS SHOP VIEW ============ -->
+  <div id="view-store" hidden>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Parts Shop</h1>
+        <p class="page-sub">Browse and order replacement parts from our inventory. Pay on pickup or delivery.</p>
+      </div>
+    </div>
+
+    <div class="store-tabs">
+      <button class="store-tab active" data-store-tab="catalog"><i class="bi bi-shop"></i> Catalog</button>
+      <button class="store-tab" data-store-tab="orders"><i class="bi bi-box-seam"></i> My Part Orders <span class="cell-sub" id="store-orders-count"></span></button>
+    </div>
+
+    <div id="store-catalog">
+      <div class="panel">
+        <div class="filter-bar">
+          <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="store-search" placeholder="Search parts..."></div>
+        </div>
+        <div class="store-layout">
+          <div class="store-grid" id="store-grid"></div>
+          <aside class="cart-panel" id="cart-panel"></aside>
+        </div>
+      </div>
+    </div>
+
+    <div id="store-orders" hidden>
+      <div class="panel">
+        <div class="table-wrap">
+          <table class="payments-table" id="store-orders-table">
+            <thead><tr><th>Order #</th><th>Placed</th><th>Total</th><th>Status</th><th></th></tr></thead>
+            <tbody id="store-orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
   </div>
 </div>
 </div>
@@ -194,6 +233,17 @@
       </div>
     </div>
     <div class="modal-body" id="portal-invoice-body"></div>
+  </div>
+</div>
+
+<!-- Parts order detail -->
+<div class="modal-overlay" id="portal-modal-parts-order">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header" style="cursor:default;">
+      <h3 class="modal-title" id="portal-po-title">Parts Order</h3>
+      <button class="modal-close" data-close-modal="portal-modal-parts-order">&times;</button>
+    </div>
+    <div class="modal-body" id="portal-po-body"></div>
   </div>
 </div>
 

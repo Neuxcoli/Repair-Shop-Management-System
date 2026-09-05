@@ -333,10 +333,36 @@
             <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
           </div>
           <table>
-            <thead><tr><th>Part #</th><th>Part Name</th><th>Qty On Hand</th><th>Unit Cost</th><th>Unit Price</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Part #</th><th>Part Name</th><th>Qty On Hand</th><th>Unit Cost</th><th>Unit Price</th><th>Status</th><th>Catalog</th><th></th></tr></thead>
             <tbody id="parts-table-body"></tbody>
           </table>
           <div class="pager-row"><div class="pager-left" id="parts-count"></div></div>
+        </div>
+      </section>
+
+      <!-- ============ PARTS ORDERS ============ -->
+      <section class="page" id="page-parts-orders">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Parts Orders</h1>
+            <p class="page-sub">Customer parts purchases awaiting fulfillment.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="filter-bar">
+            <select class="input" id="parts-orders-status-filter" style="width:170px;">
+              <option value="">All Statuses</option>
+              <option value="pending">Pending Fulfillment</option>
+              <option value="fulfilled">Fulfilled</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <table>
+            <thead><tr><th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Placed</th><th>Status</th><th></th></tr></thead>
+            <tbody id="parts-orders-table-body"></tbody>
+          </table>
+          <div class="pager-row"><div class="pager-left" id="parts-orders-count"></div></div>
         </div>
       </section>
 
@@ -944,10 +970,32 @@
           <input class="input" type="number" step="0.01" name="unit_price" placeholder="0.00">
         </div>
       </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea class="input" name="description" rows="2" placeholder="Shown in the customer parts catalog…"></textarea>
+      </div>
+      <div class="field" style="margin-top:4px;">
+        <label class="check-label"><input type="checkbox" name="available_for_purchase" value="1"> List in customer catalog (available for purchase)</label>
+        <div class="cell-sub" style="margin-top:4px;">Only parts with this enabled appear in the customer-facing parts shop. Item cost &amp; supplier data stay hidden from customers.</div>
+      </div>
     </form>
     <div class="modal-footer">
       <button class="btn btn-secondary" data-close-modal="modal-part">Cancel</button>
       <button class="btn btn-primary" data-submit-form="form-part">Save Part</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: PARTS ORDER DETAIL ================= -->
+<div class="modal-overlay" id="modal-parts-order">
+  <div class="modal" data-drag style="width:640px;">
+    <div class="modal-header" data-drag-handle>
+      <h3 class="modal-title" id="po-detail-title">Parts Order</h3>
+      <button class="modal-close" data-close-modal="modal-parts-order">&times;</button>
+    </div>
+    <div class="modal-body" id="po-detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="modal-parts-order">Close</button>
     </div>
   </div>
 </div>

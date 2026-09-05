@@ -143,6 +143,20 @@ export const api = {
     update: (id, data) => request(`/parts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id) => request(`/parts/${id}`, { method: 'DELETE' }),
   },
+  partsOrders: {
+    list: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return request(`/parts-orders${qs ? `?${qs}` : ''}`);
+    },
+    fulfill: (id) => request(`/parts-orders/${id}/fulfill`, { method: 'POST' }),
+  },
+  store: {
+    catalog: (q = '') => request(`/store/catalog${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+    orders: {
+      list: () => request('/store/orders'),
+      create: (data) => request('/store/orders', { method: 'POST', body: JSON.stringify(data) }),
+    },
+  },
   orders: {
     list: (params = {}) => {
       const qs = new URLSearchParams(params).toString();

@@ -96,10 +96,12 @@ class Part(Base):
     id = Column(Integer, primary_key=True)
     sku = Column(String(50), unique=True, nullable=False)
     name = Column(String(150), nullable=False)
+    description = Column(Text)
     qty_on_hand = Column(Integer, default=0)
     reorder_threshold = Column(Integer, default=5)
     unit_cost = Column(Numeric(12, 2), default=0)
     unit_price = Column(Numeric(12, 2), default=0)
+    available_for_purchase = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     deleted_at = Column(DateTime(timezone=True))
 
@@ -315,3 +317,44 @@ class OrderPhoto(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     repair_order = relationship("RepairOrder", back_populates="photos")
+
+
+class PartsOrderStatus(str, enum.Enum):
+    pending = "pending"
+    fulfilled = "fulfilled"
+    cancelled = "cancelled"
+
+
+class PartsOrder(Base):
+    __tablename__ = "repairshop_parts_orders"
+
+    id = Column(Integer, primary_key=True)
+    order_number = Column(String(20), unique=True, nullable=False)
+    customer_id = Column(Integer, ForeignKey("repairshop_customers.id"), nullable=False)
+    status = Column(Enum(PartsOrderStatus, name="parts_order_status"), default=PartsOrderStatus.pending)
+    total = Column(Numeric(12, 2), default=0)
+    notes = Column(Text)
+    fulfilled_at = Column(DateTime(timezone=True))
+    deleted_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    customer = relationship("Customer")
+    items = relationship(
+        "PartsOrderItem",
+        back_populates="parts_order",
+        order_by="PartsOrderItem.id",
+        cascade="all, delete-orphan",
+    )
+
+
+class PartsOrderItem(Base):
+    __tablename__ = "repairshop_parts_order_items"
+
+    id = Column(Integer, primary_key=True)
+    parts_order_id = Column(Integer, ForeignKey("repairshop_parts_orders.id", ondelete="CASCADE"), nullable=False)
+    part_id = Column(Integer, ForeignKey("repairshop_parts.id", ondelete="RESTRICT"), nullable=False)
+    quantity = Column(Integer, default=1)
+    unit_price = Column(Numeric(12, 2), nullable=False)
+
+    parts_order = relationship("PartsOrder", back_populates="items")
+    part = relationship("Part")

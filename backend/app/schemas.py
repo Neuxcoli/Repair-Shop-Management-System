@@ -68,10 +68,12 @@ class ItemOut(ItemBase):
 class PartBase(BaseModel):
     sku: str
     name: str
+    description: Optional[str] = None
     qty_on_hand: int = 0
     reorder_threshold: int = 5
     unit_cost: float = 0
     unit_price: float = 0
+    available_for_purchase: bool = False
 
 
 class PartCreate(PartBase):
@@ -81,6 +83,57 @@ class PartCreate(PartBase):
 class PartOut(PartBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
+
+
+class CatalogPartOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    sku: str
+    name: str
+    description: Optional[str] = None
+    unit_price: float = 0
+    stock_status: str = "in_stock"  # "in_stock" | "low_stock" | "out_of_stock"
+
+
+# ---------- Parts orders (customer purchases) ----------
+class PartsOrderItemCreate(BaseModel):
+    part_id: int
+    quantity: int = Field(1, ge=1)
+
+
+class PartsOrderCreate(BaseModel):
+    items: list[PartsOrderItemCreate]
+    notes: Optional[str] = None
+
+
+class PartsOrderItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    part_id: int
+    quantity: int
+    unit_price: float
+    name: str
+    sku: Optional[str] = None
+    line_total: float
+
+
+class PartsOrderCustomerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    full_name: str
+
+
+class PartsOrderOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    order_number: str
+    status: str
+    total: float
+    notes: Optional[str] = None
+    created_at: datetime
+    fulfilled_at: Optional[datetime] = None
+    customer: Optional[PartsOrderCustomerOut] = None
+    items: list[PartsOrderItemOut] = Field(default_factory=list)
 
 
 # ---------- Repair Orders ----------
