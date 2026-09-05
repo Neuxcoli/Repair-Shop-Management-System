@@ -61,7 +61,7 @@ const NAV = {
   technician: {
     Work: [
       ['dashboard', 'bi-grid-1x2-fill', 'Dashboard'],
-      ['orders', 'bi-clipboard2-check', 'My Work Orders'],
+      ['orders', 'bi-clipboard2-check', 'Repair Orders'],
       ['pricelist', 'bi-tags', 'Price List'],
       ['inventory', 'bi-box-seam', 'Parts Catalog'],
     ],
@@ -1039,8 +1039,8 @@ async function renderTechnicianDashboard(orders, byStatus, openOrders) {
       <div class="kpi-value">${low.length}</div>
     </div>`;
 
-  document.getElementById('dashboard-panel-title').textContent = 'My Repair Orders';
-  document.getElementById('dashboard-panel-link').textContent = 'Open My Work Orders';
+  document.getElementById('dashboard-panel-title').textContent = 'Repair Orders';
+  document.getElementById('dashboard-panel-link').textContent = 'Open Repair Orders';
   document.getElementById('dashboard-status-breakdown').innerHTML = orders.slice(0, 8).map((o) => {
     const ageMs = now - new Date(o.created_at).getTime();
     const ageH = ageMs / (1000 * 60 * 60);
@@ -1084,8 +1084,7 @@ async function renderOrders() {
   const q = document.getElementById('orders-search').value;
   const orders = await api.orders.list({ ...(status && { status }), ...(q && { q }) });
 
-  document.querySelector('#page-orders .page-title').textContent =
-    role === 'technician' ? 'My Work Orders' : 'Repair Orders';
+  document.querySelector('#page-orders .page-title').textContent = 'Repair Orders';
 
   const rows = orders.map((o) => {
     const statusCell = role === 'technician'
