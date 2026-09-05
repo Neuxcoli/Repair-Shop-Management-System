@@ -1287,7 +1287,7 @@ async function renderOrderPhotos(order) {
 
   grid.innerHTML = photos.length ? photos.map((p) => `
     <div class="photo-cell">
-      <a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt=""></a>
+      <a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="${esc(p.caption || '')}" onerror="this.closest('.photo-cell').style.display='none'"></a>
       ${p.caption ? `<div class="photo-caption">${esc(p.caption)}</div>` : ''}
     </div>`).join('') : '<div class="cell-sub">No photos uploaded.</div>';
 

@@ -451,6 +451,8 @@ async def upload_photo(
     order = _get_order_or_404(order_id, db)
     _check_technician_access(order, user)
     data = await file.read()
+    if not data:
+        raise HTTPException(400, "Empty image")
     if len(data) > 8 * 1024 * 1024:
         raise HTTPException(400, "Image too large (max 8MB)")
     from ..storage import build_key, store
