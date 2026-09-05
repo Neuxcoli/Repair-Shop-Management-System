@@ -102,6 +102,8 @@ def _order_list_out(o: models.RepairOrder) -> schemas.PortalOrderListOut:
         released_at=o.released_at,
         completed_at=o.completed_at,
         appointment_datetime=o.appointment_datetime,
+        service_location=o.service_location or "in_shop",
+        service_address=o.service_address,
         item_description=o.item.description if o.item else None,
         item_identifier=o.item.identifier if o.item else None,
     )
@@ -149,6 +151,8 @@ def _order_detail_out(db: Session, o: models.RepairOrder) -> schemas.PortalOrder
         item_identifier=o.item.identifier if o.item else None,
         problem_description=o.problem_description,
         diagnosis=o.diagnosis,
+        service_location=o.service_location or "in_shop",
+        service_address=o.service_address,
         warranty_days=o.warranty_days or 0,
         warranty_notes=o.warranty_notes,
         labor_cost=float(o.labor_cost or 0),
@@ -231,6 +235,8 @@ def create_order(
         customer_id=user.customer_id,
         item_id=item_id,
         problem_description=payload.problem_description,
+        service_location=payload.service_location,
+        service_address=(payload.service_address or None) if payload.service_location == "onsite" else None,
         status=models.OrderStatus.requested,
         appointment_datetime=payload.appointment_datetime,
     )

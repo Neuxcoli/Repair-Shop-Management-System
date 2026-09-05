@@ -1096,7 +1096,7 @@ async function renderOrders() {
     const actions = can('repair_order.approve') ? kebab(o.id, 'order') : '';
     return `
     <tr data-order-row="${o.id}">
-      <td><b>${o.ro_number}</b><div class="cell-sub">${dateFmt(o.created_at)}</div></td>
+      <td><b>${o.ro_number}</b>${o.service_location === 'onsite' ? ` ${badge('blue', 'On-Site')}` : ''}<div class="cell-sub">${dateFmt(o.created_at)}</div></td>
       <td>${o.customer?.full_name ?? '—'}</td>
       <td>${o.item?.description ?? '—'}${o.item?.identifier ? `<div class="cell-sub">${o.item.identifier}</div>` : ''}</td>
       <td>${o.technician?.full_name ?? '—'}</td>
@@ -1155,13 +1155,17 @@ async function openOrderDetail(id) {
   const order = await api.orders.get(id);
 
   document.getElementById('order-detail-title').textContent = `Order ${order.ro_number}`;
-  document.getElementById('order-detail-badge').innerHTML = badge(STATUS_BADGE[order.status], label(order.status));
+  document.getElementById('order-detail-badge').innerHTML = `${badge(STATUS_BADGE[order.status], label(order.status))}${order.service_location === 'onsite' ? ` ${badge('blue', 'On-Site')}` : ''}`;
 
   document.getElementById('od-ro').textContent = order.ro_number;
   document.getElementById('od-customer').textContent = order.customer?.full_name ?? '—';
   document.getElementById('od-item').textContent = order.item?.description ?? '—';
   document.getElementById('od-technician').textContent = order.technician?.full_name ?? 'Unassigned';
   document.getElementById('od-priority').innerHTML = badge(PRIORITY_BADGE[order.priority], label(order.priority));
+  const serviceEl = document.getElementById('od-service');
+  serviceEl.innerHTML = order.service_location === 'onsite'
+    ? `On-Site${order.service_address ? `<div class="cell-sub" style="white-space:pre-line;">${esc(order.service_address)}</div>` : ''}`
+    : 'In-Shop';
   document.getElementById('od-created').textContent = dateFmt(order.created_at);
 
   document.getElementById('od-problem').value = order.problem_description ?? '';

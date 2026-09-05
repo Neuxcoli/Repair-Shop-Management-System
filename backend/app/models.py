@@ -116,6 +116,8 @@ class RepairOrder(Base):
     item_id = Column(Integer, ForeignKey("repairshop_items.id"), nullable=False)
     technician_id = Column(Integer, ForeignKey("repairshop_technicians.id"), nullable=True)
     problem_description = Column(Text)
+    service_location = Column(String(20), default="in_shop")
+    service_address = Column(Text)
     inspection_notes = Column(Text)
     diagnosis = Column(Text)
     diagnosis_notes = Column(Text)

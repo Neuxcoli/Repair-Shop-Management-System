@@ -747,3 +747,11 @@ th.sortable:hover{ color:var(--blue-700); }
   .store-layout{ grid-template-columns:1fr; }
   .cart-panel{ position:static; }
 }
+
+/* On-site service type cards */
+.service-type-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.service-type-card{ display:flex; flex-direction:column; gap:4px; border:1px solid var(--gray-200); border-radius:12px; padding:14px; cursor:pointer; transition:border-color .15s, background .15s; background:#fff; }
+.service-type-card:has(input:checked){ border-color:var(--primary); background:var(--primary-50); }
+.service-type-card input{ position:absolute; opacity:0; pointer-events:none; }
+.service-type-card b{ font-size:14px; color:var(--gray-900); }
+@media (max-width:768px){ .service-type-grid{ grid-template-columns:1fr; } }

@@ -142,6 +142,8 @@ class RepairOrderBase(BaseModel):
     item_id: int
     technician_id: Optional[int] = None
     problem_description: Optional[str] = None
+    service_location: str = "in_shop"
+    service_address: Optional[str] = None
     priority: PriorityLevel = PriorityLevel.normal
     status: OrderStatus = OrderStatus.requested
     appointment_datetime: Optional[datetime] = None
@@ -156,6 +158,8 @@ class RepairOrderUpdate(BaseModel):
     priority: Optional[PriorityLevel] = None
     status: Optional[OrderStatus] = None
     problem_description: Optional[str] = None
+    service_location: Optional[str] = None
+    service_address: Optional[str] = None
     inspection_notes: Optional[str] = None
     diagnosis: Optional[str] = None
     diagnosis_notes: Optional[str] = None
@@ -560,6 +564,8 @@ class PortalOrderCreate(BaseModel):
     item_description: Optional[str] = None
     item_identifier: Optional[str] = None
     problem_description: Optional[str] = None
+    service_location: str = "in_shop"
+    service_address: Optional[str] = None
     appointment_datetime: Optional[datetime] = None
 
 
@@ -574,6 +580,8 @@ class PortalOrderListOut(BaseModel):
     released_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     appointment_datetime: Optional[datetime] = None
+    service_location: str = "in_shop"
+    service_address: Optional[str] = None
     item_description: Optional[str] = None
     item_identifier: Optional[str] = None
 
@@ -588,8 +596,8 @@ class PortalOrderDetailOut(BaseModel):
     updated_at: datetime
     completed_at: Optional[datetime] = None
     appointment_datetime: Optional[datetime] = None
-    item_description: Optional[str] = None
-    item_identifier: Optional[str] = None
+    service_location: str = "in_shop"
+    service_address: Optional[str] = None
     problem_description: Optional[str] = None
     diagnosis: Optional[str] = None
     warranty_days: int = 0

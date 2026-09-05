@@ -54,7 +54,22 @@ const slotsWrap = document.getElementById('portal-slots-wrap');
 const slotGrid = document.getElementById('portal-slot-grid');
 const slotSelected = document.getElementById('portal-slot-selected');
 const slotSelectedLabel = document.getElementById('portal-slot-selected-label');
+const serviceLocationInputs = document.querySelectorAll('input[name="service-location"]');
+const serviceAddressWrap = document.getElementById('portal-service-address-wrap');
+const serviceAddressInput = document.getElementById('portal-service-address');
 let selectedAppointment = null;
+
+function currentServiceLocation() {
+  const checked = [...serviceLocationInputs].find((r) => r.checked);
+  return checked ? checked.value : 'in_shop';
+}
+
+function syncServiceType() {
+  const onsite = currentServiceLocation() === 'onsite';
+  serviceAddressWrap.hidden = !onsite;
+  serviceAddressInput.required = onsite;
+}
+serviceLocationInputs.forEach((r) => r.addEventListener('change', syncServiceType));
 
 // Appointment date picker defaults to today and cannot be in the past.
 (function initAppt() {
@@ -126,6 +141,8 @@ form.addEventListener('submit', async (e) => {
     const data = {
       type: newItemToggle.checked ? 'new' : 'existing',
       problem_description: document.getElementById('portal-problem').value.trim() || null,
+      service_location: currentServiceLocation(),
+      service_address: currentServiceLocation() === 'onsite' ? serviceAddressInput.value.trim() || null : null,
       appointment_datetime: selectedAppointment ? selectedAppointment.start : null,
     };
     if (newItemToggle.checked) {
@@ -136,6 +153,7 @@ form.addEventListener('submit', async (e) => {
     }
     await api.portal.orders.create(data);
     form.reset();
+    syncServiceType();
     newItemToggle.checked = false;
     newItemFields.hidden = true;
     itemSelect.disabled = false;
@@ -171,6 +189,11 @@ function isActive(o) {
   return (ACTIVE_STATUSES.includes(o.status) && !TERMINAL.includes(o.status)) || o.status === 'invoiced';
 }
 
+function locationBadge(o) {
+  if (!o.service_location || o.service_location === 'in_shop') return '';
+  return ` ${badge('blue', 'On-Site')}`;
+}
+
 function orderCardHtml(o, opts = {}) {
   const actions = [];
   if (opts.withDetail) actions.push(`<button class="btn btn-secondary btn-sm" data-portal-detail="${o.id}"><i class="bi bi-eye"></i> Details</button>`);
@@ -183,7 +206,7 @@ function orderCardHtml(o, opts = {}) {
         <b>${esc(o.ro_number)}</b>
         ${badge(STATUS_BADGE[o.status] || 'grey', label(o.status))}
       </div>
-      <div>${esc(o.item_description || '')}${o.item_identifier ? ` <span class="cell-sub">· ${esc(o.item_identifier)}</span>` : ''}</div>
+      <div>${esc(o.item_description || '')}${o.item_identifier ? ` <span class="cell-sub">· ${esc(o.item_identifier)}</span>` : ''}${locationBadge(o)}</div>
       <div class="cell-sub">${dateFmt(o.created_at)}${o.completed_at ? ` · completed ${dateFmt(o.completed_at)}` : ''}${o.appointment_datetime ? ` · appt ${dateTimeFmt(o.appointment_datetime)}` : ''}</div>
       ${actions.length ? `<div class="order-card-actions">${actions.join('')}</div>` : ''}
     </div>`;
@@ -247,6 +270,7 @@ async function loadTrack() {
           <div class="detail-item"><div class="detail-label">Date Received</div><div class="detail-value">${dateFmt(o.created_at)}</div></div>
           <div class="detail-item"><div class="detail-label">Last Updated</div><div class="detail-value">${dateFmt(o.updated_at)}</div></div>
           ${o.appointment_datetime ? `<div class="detail-item"><div class="detail-label">Appointment</div><div class="detail-value">${dateTimeFmt(o.appointment_datetime)}</div></div>` : ''}
+          ${o.service_location === 'onsite' ? `<div class="detail-item"><div class="detail-label">Service</div><div class="detail-value">On-Site${o.service_address ? `<div class="cell-sub">${esc(o.service_address)}</div>` : ''}</div></div>` : ''}
           ${o.released_at ? `<div class="detail-item"><div class="detail-label">Released</div><div class="detail-value">${dateFmt(o.released_at)}</div></div>` : ''}
           ${o.completed_at ? `<div class="detail-item"><div class="detail-label">Completed</div><div class="detail-value">${dateFmt(o.completed_at)}</div></div>` : ''}
         </div>
@@ -354,6 +378,7 @@ async function openDetail(id) {
       <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value">${badge(STATUS_BADGE[o.status] || 'grey', label(o.status))}</div></div>
       <div class="detail-item"><div class="detail-label">Submitted</div><div class="detail-value">${dateFmt(o.created_at)}</div></div>
       <div class="detail-item"><div class="detail-label">Appointment</div><div class="detail-value">${o.appointment_datetime ? dateTimeFmt(o.appointment_datetime) : 'Not scheduled'}</div></div>
+      ${o.service_location === 'onsite' ? `<div class="detail-item"><div class="detail-label">Service Location</div><div class="detail-value">On-Site<div class="cell-sub">${esc(o.service_address || '—')}</div></div></div>` : ''}
       <div class="detail-item"><div class="detail-label">Estimated Completion</div><div class="detail-value">${o.completed_at ? dateFmt(o.completed_at) : 'To be determined'}</div></div>
     </div>
     <div class="field"><label>Reported Issue</label><textarea class="input" rows="3" readonly>${esc(o.problem_description ?? '—')}</textarea></div>

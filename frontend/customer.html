@@ -99,12 +99,32 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Book a New Repair</h1>
-        <p class="page-sub">Tell us about your item and the issue. Our team will review and get back to you.</p>
+        <p class="page-sub">Choose in-shop service or request a technician to come to your location.</p>
       </div>
     </div>
     <div class="panel" style="max-width:640px;">
       <div class="panel-body" style="padding:24px;">
         <form id="portal-request-form" novalidate>
+          <div class="field">
+            <label>Service Type</label>
+            <div class="service-type-grid">
+              <label class="service-type-card">
+                <input type="radio" name="service-location" value="in_shop" checked>
+                <b>In-Shop Repair</b>
+                <span class="cell-sub">Bring your item to our shop.</span>
+              </label>
+              <label class="service-type-card">
+                <input type="radio" name="service-location" value="onsite">
+                <b>On-Site Service</b>
+                <span class="cell-sub">A technician comes to your location.</span>
+              </label>
+            </div>
+          </div>
+          <div class="field" id="portal-service-address-wrap" hidden>
+            <label for="portal-service-address">Service Address / Location</label>
+            <textarea class="input" id="portal-service-address" rows="2" placeholder="e.g. 123 Bagumbayan St., Brgy. San Isidro, Quezon City"></textarea>
+            <div class="cell-sub" style="margin-top:4px;">Our technician will come to this address on your preferred date.</div>
+          </div>
           <div class="field">
             <label>Item / Vehicle</label>
             <select class="input" id="portal-item-select" required>
