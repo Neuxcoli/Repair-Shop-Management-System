@@ -257,12 +257,14 @@
             <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
           </div>
 
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Order #</th><th>Customer</th><th>Item</th><th>Technician</th><th>Priority</th><th>Status</th><th></th></tr>
             </thead>
             <tbody id="orders-table-body"></tbody>
           </table>
+          </div>
 
           <div class="pager-row">
             <div class="pager-left" id="orders-count"></div>
@@ -286,10 +288,12 @@
             <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
           </div>
 
+          <div class="table-wrap">
           <table>
             <thead><tr><th>Customer</th><th>Phone</th><th>Email</th><th></th></tr></thead>
             <tbody id="customers-table-body"></tbody>
           </table>
+          </div>
           <div class="pager-row"><div class="pager-left" id="customers-count"></div></div>
         </div>
       </section>
@@ -309,10 +313,12 @@
             <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="technicians-search" placeholder="Search technicians..."></div>
             <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
           </div>
+          <div class="table-wrap">
           <table>
             <thead><tr><th>Technician</th><th>Email</th><th>Specialty</th><th>Status</th><th style="text-align:center;">Workload</th><th></th></tr></thead>
             <tbody id="technicians-table-body"></tbody>
           </table>
+          </div>
           <div class="pager-row"><div class="pager-left" id="technicians-count"></div></div>
         </div>
       </section>
@@ -332,10 +338,12 @@
             <div class="search-wrap"><i class="bi bi-search"></i><input class="input" id="parts-search" placeholder="Search by part# or part name..."></div>
             <button class="btn btn-secondary"><i class="bi bi-funnel"></i> Filters</button>
           </div>
+          <div class="table-wrap">
           <table>
             <thead><tr><th>Part #</th><th>Part Name</th><th>Qty On Hand</th><th>Unit Cost</th><th>Unit Price</th><th>Status</th><th>Catalog</th><th></th></tr></thead>
             <tbody id="parts-table-body"></tbody>
           </table>
+          </div>
           <div class="pager-row"><div class="pager-left" id="parts-count"></div></div>
         </div>
       </section>
@@ -358,10 +366,12 @@
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
+          <div class="table-wrap">
           <table>
             <thead><tr><th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Placed</th><th>Status</th><th></th></tr></thead>
             <tbody id="parts-orders-table-body"></tbody>
           </table>
+          </div>
           <div class="pager-row"><div class="pager-left" id="parts-orders-count"></div></div>
         </div>
       </section>
@@ -384,12 +394,14 @@
               <option value="paid">Paid</option>
             </select>
           </div>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Invoice #</th><th>Order #</th><th>Customer</th><th>Total</th><th>Issued</th><th>Paid</th><th>Status</th><th></th></tr>
             </thead>
             <tbody id="invoices-table-body"></tbody>
           </table>
+          </div>
           <div class="pager-row"><div class="pager-left" id="invoices-count"></div></div>
         </div>
       </section>
@@ -1130,10 +1142,12 @@
 
       <div class="detail-section">
         <div class="detail-section-title">Repair History</div>
-        <table>
-          <thead><tr><th>Order #</th><th>Item</th><th>Technician</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead>
-          <tbody id="cust-detail-orders-body"></tbody>
-        </table>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Order #</th><th>Item</th><th>Technician</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead>
+            <tbody id="cust-detail-orders-body"></tbody>
+          </table>
+        </div>
         <div class="pager-row"><div class="pager-left" id="cust-detail-orders-count"></div></div>
       </div>
     </div>
